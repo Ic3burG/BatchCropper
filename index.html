@@ -699,7 +699,11 @@
               </select>
             </div>
             <div class="input-group" id="quality-container" style="display: none; margin-top: 8px">
-              <label>Quality (<span id="quality-val">95</span>%)</label>
+              <label>
+                Quality (
+                <span id="quality-val">95</span>
+                %)
+              </label>
               <input
                 type="range"
                 id="export-quality"
@@ -721,7 +725,12 @@
               <div class="template-legend">{name} {w} {h} {idx}</div>
             </div>
           </div>
-          <button class="btn btn-ghost btn-full" id="download-active-btn" disabled style="margin-bottom: 8px">
+          <button
+            class="btn btn-ghost btn-full"
+            id="download-active-btn"
+            disabled
+            style="margin-bottom: 8px"
+          >
             ▼ Download Active File
           </button>
           <button class="btn btn-primary btn-full" id="export-btn" disabled>
@@ -1273,23 +1282,24 @@
                 Math.round(crop.w),
                 Math.round(crop.h)
               );
-                              URL.revokeObjectURL(url);
-                              canvas.toBlob(resolve, format, exportQuality);
-                            };
-                            img.src = url;
-                          });
-              
-                          const nameParts = f.file.name.split('.');
-                          const baseName = nameParts.slice(0, -1).join('.');
-                          const resolvedBase = resolveTemplate(filenameTemplate, {
-                            name: baseName,
-                            w: crop.w,
-                            h: crop.h,
-                            idx: i + 1,
-                          });
-                          const filename = resolvedBase + '.' + ext;
-                          zip.file(filename, blob);
-                          f.done = true;          renderFileList();
+              URL.revokeObjectURL(url);
+              canvas.toBlob(resolve, format, exportQuality);
+            };
+            img.src = url;
+          });
+
+          const nameParts = f.file.name.split('.');
+          const baseName = nameParts.slice(0, -1).join('.');
+          const resolvedBase = resolveTemplate(filenameTemplate, {
+            name: baseName,
+            w: crop.w,
+            h: crop.h,
+            idx: i + 1,
+          });
+          const filename = resolvedBase + '.' + ext;
+          zip.file(filename, blob);
+          f.done = true;
+          renderFileList();
         }
 
         statusText.textContent = 'Generating zip...';

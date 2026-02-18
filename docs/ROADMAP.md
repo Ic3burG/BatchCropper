@@ -40,9 +40,9 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 ### v1.2 — Export Enhancements
 
-- [ ] **JPEG Quality Slider**: Control compression quality for JPEG/WebP exports
-- [ ] **Output Filename Template**: Customizable suffix/prefix for exported filenames (e.g., `_cropped`)
-- [ ] **Individual File Download**: Option to download a single file instead of the full ZIP
+- [x] **JPEG Quality Slider**: Control compression quality for JPEG/WebP exports
+- [x] **Output Filename Template**: Customizable suffix/prefix for exported filenames (e.g., `_cropped`)
+- [x] **Individual File Download**: Option to download a single file instead of the full ZIP
 
 ### v1.3 — UX Polish
 

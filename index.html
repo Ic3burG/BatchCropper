@@ -837,6 +837,14 @@
         return Math.round(bytes / 1024) + ' KB';
       }
 
+      function resolveTemplate(template, data) {
+        return template
+          .replace(/{name}/g, data.name)
+          .replace(/{w}/g, Math.round(data.w))
+          .replace(/{h}/g, Math.round(data.h))
+          .replace(/{idx}/g, data.idx);
+      }
+
       function loadFiles(fileArr) {
         if (!fileArr.length) return;
         files = fileArr.map((f) => ({ file: f, done: false, crop: null, info: null }));

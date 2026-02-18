@@ -433,6 +433,14 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
+      .file-item .override-badge {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--accent2);
+        flex-shrink: 0;
+        margin-left: auto;
+        align-self: center;
+      }
 
       .empty-files {
         display: flex;
@@ -581,6 +589,12 @@
             </div>
           </div>
           <button class="btn btn-ghost btn-full" id="reset-crop">Reset Selection</button>
+          <button class="btn btn-ghost btn-full" id="save-override" style="margin-top:4px;">
+            Save crop for this file
+          </button>
+          <button class="btn btn-ghost btn-full" id="clear-override" style="margin-top:4px;display:none;">
+            Clear file override
+          </button>
         </div>
 
         <div class="sidebar-section">
@@ -764,6 +778,11 @@
         updateCropBoxVisual();
       }
 
+      function updateOverrideButtons() {
+        const hasOverride = !!(files[activeIndex]?.crop);
+        document.getElementById('clear-override').style.display = hasOverride ? 'block' : 'none';
+      }
+
       function renderFileList() {
         const prevScroll = fileList.scrollTop;
         fileCount.textContent = files.length;
@@ -795,6 +814,12 @@
 
           div.appendChild(statusDot);
           div.appendChild(textWrap);
+          if (f.crop) {
+            const badge = document.createElement('span');
+            badge.className = 'override-badge';
+            badge.textContent = 'custom';
+            div.appendChild(badge);
+          }
           div.addEventListener('click', () => {
             activeIndex = i;
             showPreview(i);
@@ -803,6 +828,7 @@
           fileList.appendChild(div);
         });
         fileList.scrollTop = prevScroll;
+        updateOverrideButtons();
       }
 
       function showPreview(idx) {
@@ -831,6 +857,7 @@
         dropZone.style.display = 'none';
         previewContainer.style.display = 'block';
         exportBtn.disabled = false;
+        updateOverrideButtons();
       }
 
       function applyZoom() {
@@ -1031,6 +1058,22 @@
       });
 
       // Reset crop
+      document.getElementById('save-override').addEventListener('click', () => {
+        if (!files[activeIndex]) return;
+        files[activeIndex].crop = { ...activeCrop };
+        activeCrop = files[activeIndex].crop;
+        renderFileList();
+      });
+
+      document.getElementById('clear-override').addEventListener('click', () => {
+        if (!files[activeIndex]) return;
+        files[activeIndex].crop = null;
+        activeCrop = batchCrop;
+        updateInputs();
+        updateCropBoxVisual();
+        renderFileList();
+      });
+
       document.getElementById('reset-crop').addEventListener('click', () => {
         Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
         updateInputs();
@@ -1040,7 +1083,7 @@
       // Export
       document.getElementById('export-btn').addEventListener('click', async () => {
         if (!files.length) return;
-        if (!batchCrop.w || !batchCrop.h) {
+        if (!activeCrop.w || !activeCrop.h) {
           statusText.textContent = 'Select a crop region first.';
           return;
         }
@@ -1074,20 +1117,21 @@
             const img = new Image();
             const url = URL.createObjectURL(f.file);
             img.onload = () => {
+              const crop = f.crop ?? batchCrop;
               const canvas = document.createElement('canvas');
-              canvas.width = Math.round(batchCrop.w);
-              canvas.height = Math.round(batchCrop.h);
+              canvas.width = Math.round(crop.w);
+              canvas.height = Math.round(crop.h);
               const ctx = canvas.getContext('2d');
               ctx.drawImage(
                 img,
-                Math.round(batchCrop.x),
-                Math.round(batchCrop.y),
-                Math.round(batchCrop.w),
-                Math.round(batchCrop.h),
+                Math.round(crop.x),
+                Math.round(crop.y),
+                Math.round(crop.w),
+                Math.round(crop.h),
                 0,
                 0,
-                Math.round(batchCrop.w),
-                Math.round(batchCrop.h)
+                Math.round(crop.w),
+                Math.round(crop.h)
               );
               URL.revokeObjectURL(url);
               canvas.toBlob(resolve, format, 0.95);

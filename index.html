@@ -586,11 +586,21 @@
           <div class="status-text" id="status-text"></div>
         </div>
 
-        <div class="sidebar-section" style="flex-shrink: 0">
-          <h2>
+        <div
+          class="sidebar-section"
+          style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between"
+        >
+          <h2 style="margin-bottom: 0">
             Files
             <span id="file-count" style="color: var(--text-dim)">0</span>
           </h2>
+          <button
+            class="btn btn-ghost"
+            id="clear-files"
+            style="padding: 2px 6px; font-size: 10px; margin-left: auto"
+          >
+            Clear
+          </button>
         </div>
         <div class="file-list" id="file-list">
           <div class="empty-files">
@@ -624,6 +634,7 @@
       const exportBtn = document.getElementById('export-btn');
       const fileList = document.getElementById('file-list');
       const fileCount = document.getElementById('file-count');
+      const clearFilesBtn = document.getElementById('clear-files');
       const progressBar = document.getElementById('progress-bar');
       const progressFill = document.getElementById('progress-fill');
       const statusText = document.getElementById('status-text');
@@ -638,6 +649,7 @@
       // Drop zone
       dropZone.addEventListener('click', () => fileInput.click());
       fileInput.addEventListener('change', (e) => loadFiles(Array.from(e.target.files)));
+      clearFilesBtn.addEventListener('click', clearFiles);
 
       dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -669,6 +681,27 @@
         cropRect = { x: 0, y: 0, w: 0, h: 0 };
         renderFileList();
         showPreview(0);
+      }
+
+      function clearFiles() {
+        files = [];
+        activeIndex = 0;
+        cropRect = { x: 0, y: 0, w: 0, h: 0 };
+        renderFileList();
+
+        // Reset UI
+        previewContainer.style.display = 'none';
+        dropZone.style.display = 'flex';
+        exportBtn.disabled = true;
+        fileInput.value = ''; // Allow selecting same files again
+
+        // Reset crop inputs
+        inX.value = 0;
+        inY.value = 0;
+        inW.value = 0;
+        inH.value = 0;
+
+        updateCropBoxVisual();
       }
 
       function renderFileList() {

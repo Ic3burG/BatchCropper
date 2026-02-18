@@ -558,6 +558,28 @@
               <input type="number" id="crop-h" value="0" min="1" />
             </div>
           </div>
+          <div style="margin-top:8px;">
+            <div class="input-group">
+              <label>Ratio</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <select id="ratio-select" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 8px;outline:none;border-radius:2px;">
+                  <option value="free">Free</option>
+                  <option value="1">1:1</option>
+                  <option value="1.3333">4:3</option>
+                  <option value="1.5">3:2</option>
+                  <option value="1.7778">16:9</option>
+                  <option value="custom">Custom</option>
+                </select>
+                <span id="custom-ratio-inputs" style="display:none;gap:4px;align-items:center;">
+                  <input type="number" id="ratio-w" value="16" min="1"
+                    style="width:40px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:4px 6px;outline:none;border-radius:2px;" />
+                  <span style="color:var(--text-dim);font-family:var(--mono);font-size:12px;">:</span>
+                  <input type="number" id="ratio-h" value="9" min="1"
+                    style="width:40px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:4px 6px;outline:none;border-radius:2px;" />
+                </span>
+              </div>
+            </div>
+          </div>
           <button class="btn btn-ghost btn-full" id="reset-crop">Reset Selection</button>
         </div>
 
@@ -627,6 +649,7 @@
       let zoom = 1;
       let batchCrop = { x: 0, y: 0, w: 0, h: 0 }; // in image pixels
       let activeCrop = batchCrop;
+      let aspectRatio = null; // null = free; positive number = width/height ratio
       let imgNatW = 0,
         imgNatH = 0;
       let isDragging = false;
@@ -934,8 +957,9 @@
           const p = imgPos(e);
           const x = Math.min(cropStart.x, p.x);
           const y = Math.min(cropStart.y, p.y);
-          const w = Math.abs(p.x - cropStart.x);
-          const h = Math.abs(p.y - cropStart.y);
+          let w = Math.abs(p.x - cropStart.x);
+          let h = Math.abs(p.y - cropStart.y);
+          if (aspectRatio) h = w / aspectRatio;
           Object.assign(activeCrop, { x, y, w, h });
         } else if (dragMode === 'move') {
           activeCrop.x = cropStart.x + dx;
@@ -983,6 +1007,12 @@
           if (h < 1) {
             h = 1;
           }
+
+          // Apply aspect ratio constraint for corner handles
+          if (aspectRatio && ['tl', 'tr', 'bl', 'br'].includes(dragMode)) {
+            h = w / aspectRatio;
+          }
+
           Object.assign(activeCrop, { x, y, w, h });
         }
 
@@ -1090,6 +1120,33 @@
         statusText.textContent = `Done - ${total} file${total > 1 ? 's' : ''} zipped and downloaded`;
         exportBtn.disabled = false;
       });
+
+      // Aspect ratio lock
+      const ratioSelect = document.getElementById('ratio-select');
+      const customRatioInputs = document.getElementById('custom-ratio-inputs');
+      const ratioW = document.getElementById('ratio-w');
+      const ratioH = document.getElementById('ratio-h');
+
+      function updateAspectRatio() {
+        const val = ratioSelect.value;
+        if (val === 'free') {
+          aspectRatio = null;
+          customRatioInputs.style.display = 'none';
+        } else if (val === 'custom') {
+          customRatioInputs.style.display = 'flex';
+          const w = parseFloat(ratioW.value) || 16;
+          const h = parseFloat(ratioH.value) || 9;
+          const ratio = w / h;
+          aspectRatio = isFinite(ratio) && ratio > 0 ? ratio : null;
+        } else {
+          customRatioInputs.style.display = 'none';
+          aspectRatio = parseFloat(val);
+        }
+      }
+
+      ratioSelect.addEventListener('change', updateAspectRatio);
+      ratioW.addEventListener('input', updateAspectRatio);
+      ratioH.addEventListener('input', updateAspectRatio);
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {

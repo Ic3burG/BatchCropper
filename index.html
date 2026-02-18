@@ -834,6 +834,27 @@
         document.getElementById('clear-override').style.display = hasOverride ? 'block' : 'none';
       }
 
+      function clearFiles() {
+        files = [];
+        activeIndex = 0;
+        cropRect = { x: 0, y: 0, w: 0, h: 0 };
+        renderFileList();
+
+        // Reset UI
+        previewContainer.style.display = 'none';
+        dropZone.style.display = 'flex';
+        exportBtn.disabled = true;
+        fileInput.value = ''; // Allow selecting same files again
+
+        // Reset crop inputs
+        inX.value = 0;
+        inY.value = 0;
+        inW.value = 0;
+        inH.value = 0;
+
+        updateCropBoxVisual();
+      }
+
       function renderFileList() {
         const prevScroll = fileList.scrollTop;
         fileCount.textContent = files.length;

@@ -52,3 +52,22 @@
 **Status:** ✅ Formatting enforcement fully operational locally and in CI
 
 ---
+
+### 🌍 GitHub Pages Deployment
+
+**Goal:** Automate deployment of the static site to GitHub Pages on every push to `main`.
+
+**Changes Made:**
+
+- Created `.github/workflows/pages.yml` GitHub Actions workflow:
+  - Triggers on push to `main` and `workflow_dispatch`
+  - Uses official actions: `configure-pages`, `upload-pages-artifact`, `deploy-pages`
+  - Deploys repository root as a static site artifact
+  - Runs in `github-pages` environment with necessary permissions
+- Updated `README.md`:
+  - Added "Deploy to GitHub Pages" workflow status badge
+  - Added "Live Demo" shield badge linking to `https://ic3burg.github.io/BatchCropper/`
+  - Added callout in Usage section pointing to the live demo
+- Enabled GitHub Pages on the repository via API/Settings (source: GitHub Actions)
+
+**Status:** ✅ Deployment automation implemented and verified via PR #4

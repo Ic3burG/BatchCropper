@@ -1319,11 +1319,11 @@
           statusText.textContent = `Processing ${i + 1}/${total}: ${f.file.name}`;
           progressFill.style.width = (i / total) * 100 + '%';
 
+          const crop = f.crop ?? batchCrop;
           const blob = await new Promise((resolve) => {
             const img = new Image();
             const url = URL.createObjectURL(f.file);
             img.onload = () => {
-              const crop = f.crop ?? batchCrop;
               const canvas = document.createElement('canvas');
               canvas.width = Math.round(crop.w);
               canvas.height = Math.round(crop.h);

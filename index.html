@@ -1273,18 +1273,23 @@
                 Math.round(crop.w),
                 Math.round(crop.h)
               );
-              URL.revokeObjectURL(url);
-              canvas.toBlob(resolve, format, 0.95);
-            };
-            img.src = url;
-          });
-
-          const nameParts = f.file.name.split('.');
-          nameParts.pop();
-          const filename = nameParts.join('.') + '_cropped.' + ext;
-          zip.file(filename, blob);
-          f.done = true;
-          renderFileList();
+                              URL.revokeObjectURL(url);
+                              canvas.toBlob(resolve, format, exportQuality);
+                            };
+                            img.src = url;
+                          });
+              
+                          const nameParts = f.file.name.split('.');
+                          const baseName = nameParts.slice(0, -1).join('.');
+                          const resolvedBase = resolveTemplate(filenameTemplate, {
+                            name: baseName,
+                            w: crop.w,
+                            h: crop.h,
+                            idx: i + 1,
+                          });
+                          const filename = resolvedBase + '.' + ext;
+                          zip.file(filename, blob);
+                          f.done = true;          renderFileList();
         }
 
         statusText.textContent = 'Generating zip...';

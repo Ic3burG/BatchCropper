@@ -1090,6 +1090,32 @@
         statusText.textContent = `Done - ${total} file${total > 1 ? 's' : ''} zipped and downloaded`;
         exportBtn.disabled = false;
       });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      if (!imgNatW) return;
+
+      const step = e.shiftKey ? 10 : 1;
+
+      if (e.key === 'ArrowLeft')       { e.preventDefault(); activeCrop.x -= step; }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); activeCrop.x += step; }
+      else if (e.key === 'ArrowUp')    { e.preventDefault(); activeCrop.y -= step; }
+      else if (e.key === 'ArrowDown')  { e.preventDefault(); activeCrop.y += step; }
+      else if (e.key === 'r' || e.key === 'R') {
+        Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
+        clampCrop();
+        updateInputs();
+        updateCropBoxVisual();
+        return;
+      } else {
+        return;
+      }
+
+      clampCrop();
+      updateInputs();
+      updateCropBoxVisual();
+    });
     </script>
   </body>
 </html>

@@ -31,10 +31,10 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 ### v1.1 — Quality of Life
 
-- [ ] **Aspect Ratio Lock**: Constrain crop to common ratios (1:1, 4:3, 16:9, custom)
-- [ ] **Keyboard Shortcuts**: Arrow keys to nudge crop region by 1px; `R` to reset
-- [ ] **Per-file Crop Override**: Allow individual files to have a different crop than the batch default
-- [ ] **Image Info Display**: Show native resolution and file size in the file list
+- [x] **Aspect Ratio Lock**: Constrain crop to common ratios (1:1, 4:3, 16:9, custom)
+- [x] **Keyboard Shortcuts**: Arrow keys to nudge crop region by 1px; `R` to reset
+- [x] **Per-file Crop Override**: Allow individual files to have a different crop than the batch default
+- [x] **Image Info Display**: Show native resolution and file size in the file list
 
 ### v1.2 — Export Enhancements
 

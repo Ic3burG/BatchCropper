@@ -424,6 +424,23 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .file-item .info {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-dim);
+        opacity: 0.6;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .file-item .override-badge {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--accent2);
+        flex-shrink: 0;
+        margin-left: auto;
+        align-self: center;
+      }
 
       .empty-files {
         display: flex;
@@ -549,7 +566,84 @@
               <input type="number" id="crop-h" value="0" min="1" />
             </div>
           </div>
+          <div style="margin-top: 8px">
+            <div class="input-group">
+              <label>Ratio</label>
+              <div style="display: flex; gap: 6px; align-items: center">
+                <select
+                  id="ratio-select"
+                  style="
+                    flex: 1;
+                    background: var(--surface2);
+                    border: 1px solid var(--border);
+                    color: var(--text);
+                    font-family: var(--mono);
+                    font-size: 12px;
+                    padding: 6px 8px;
+                    outline: none;
+                    border-radius: 2px;
+                  "
+                >
+                  <option value="free">Free</option>
+                  <option value="1">1:1</option>
+                  <option value="1.3333">4:3</option>
+                  <option value="1.5">3:2</option>
+                  <option value="1.7778">16:9</option>
+                  <option value="custom">Custom</option>
+                </select>
+                <span id="custom-ratio-inputs" style="display: none; gap: 4px; align-items: center">
+                  <input
+                    type="number"
+                    id="ratio-w"
+                    value="16"
+                    min="1"
+                    style="
+                      width: 40px;
+                      background: var(--surface2);
+                      border: 1px solid var(--border);
+                      color: var(--text);
+                      font-family: var(--mono);
+                      font-size: 12px;
+                      padding: 4px 6px;
+                      outline: none;
+                      border-radius: 2px;
+                    "
+                  />
+                  <span style="color: var(--text-dim); font-family: var(--mono); font-size: 12px">
+                    :
+                  </span>
+                  <input
+                    type="number"
+                    id="ratio-h"
+                    value="9"
+                    min="1"
+                    style="
+                      width: 40px;
+                      background: var(--surface2);
+                      border: 1px solid var(--border);
+                      color: var(--text);
+                      font-family: var(--mono);
+                      font-size: 12px;
+                      padding: 4px 6px;
+                      outline: none;
+                      border-radius: 2px;
+                    "
+                  />
+                </span>
+              </div>
+            </div>
+          </div>
           <button class="btn btn-ghost btn-full" id="reset-crop">Reset Selection</button>
+          <button class="btn btn-ghost btn-full" id="save-override" style="margin-top: 4px">
+            Save crop for this file
+          </button>
+          <button
+            class="btn btn-ghost btn-full"
+            id="clear-override"
+            style="margin-top: 4px; display: none"
+          >
+            Clear file override
+          </button>
         </div>
 
         <div class="sidebar-section">
@@ -616,7 +710,9 @@
       let files = [];
       let activeIndex = 0;
       let zoom = 1;
-      let cropRect = { x: 0, y: 0, w: 0, h: 0 }; // in image pixels
+      let batchCrop = { x: 0, y: 0, w: 0, h: 0 }; // in image pixels
+      let activeCrop = batchCrop;
+      let aspectRatio = null; // null = free; positive number = width/height ratio
       let imgNatW = 0,
         imgNatH = 0;
       let isDragging = false;
@@ -674,13 +770,68 @@
         if (newFiles.length) loadFiles([...files.map((f) => f.file), ...newFiles]);
       });
 
+      function formatSize(bytes) {
+        if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        return Math.round(bytes / 1024) + ' KB';
+      }
+
       function loadFiles(fileArr) {
         if (!fileArr.length) return;
-        files = fileArr.map((f) => ({ file: f, done: false }));
+        files = fileArr.map((f) => ({ file: f, done: false, crop: null, info: null }));
         activeIndex = 0;
-        cropRect = { x: 0, y: 0, w: 0, h: 0 };
+        Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 });
+        activeCrop = batchCrop;
         renderFileList();
         showPreview(0);
+        (async () => {
+          const localFiles = files; // snapshot — immune to replacement if loadFiles() is called again
+          for (let i = 0; i < localFiles.length; i++) {
+            if (localFiles[i].info) continue;
+            await new Promise((resolve) => {
+              const img = new Image();
+              const url = URL.createObjectURL(localFiles[i].file);
+              img.onload = () => {
+                localFiles[i].info = {
+                  w: img.naturalWidth,
+                  h: img.naturalHeight,
+                  size: localFiles[i].file.size,
+                };
+                URL.revokeObjectURL(url);
+                renderFileList();
+                resolve();
+              };
+              img.onerror = resolve;
+              img.src = url;
+            });
+          }
+        })();
+      }
+
+      function clearFiles() {
+        files = [];
+        activeIndex = 0;
+        Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 });
+        activeCrop = batchCrop;
+        renderFileList();
+
+        // Reset UI
+        previewContainer.style.display = 'none';
+        dropZone.style.display = 'flex';
+        exportBtn.disabled = true;
+        fileInput.value = ''; // Allow selecting same files again
+
+        // Reset crop inputs
+        inX.value = 0;
+        inY.value = 0;
+        inW.value = 0;
+        inH.value = 0;
+
+        updateCropBoxVisual();
+      }
+
+      function updateOverrideButtons() {
+        const hasOverride = !!files[activeIndex]?.crop;
+        document.getElementById('clear-override').style.display = hasOverride ? 'block' : 'none';
       }
 
       function clearFiles() {
@@ -705,13 +856,42 @@
       }
 
       function renderFileList() {
+        const prevScroll = fileList.scrollTop;
         fileCount.textContent = files.length;
         fileList.innerHTML = '';
         files.forEach((f, i) => {
           const div = document.createElement('div');
           div.className =
             'file-item' + (i === activeIndex ? ' active' : '') + (f.done ? ' done' : '');
-          div.innerHTML = `<div class="status"></div><span class="name">${f.file.name}</span>`;
+          // Build info text
+          const infoText = f.info
+            ? `${f.info.w} x ${f.info.h} - ${formatSize(f.file.size)}`
+            : `... x ... - ${formatSize(f.file.size)}`;
+
+          const statusDot = document.createElement('div');
+          statusDot.className = 'status';
+
+          const nameEl = document.createElement('div');
+          nameEl.className = 'name';
+          nameEl.textContent = f.file.name; // textContent is safe — no XSS risk
+
+          const infoEl = document.createElement('div');
+          infoEl.className = 'info';
+          infoEl.textContent = infoText;
+
+          const textWrap = document.createElement('div');
+          textWrap.style.cssText = 'min-width:0;flex:1;overflow:hidden;';
+          textWrap.appendChild(nameEl);
+          textWrap.appendChild(infoEl);
+
+          div.appendChild(statusDot);
+          div.appendChild(textWrap);
+          if (f.crop) {
+            const badge = document.createElement('span');
+            badge.className = 'override-badge';
+            badge.textContent = 'custom';
+            div.appendChild(badge);
+          }
           div.addEventListener('click', () => {
             activeIndex = i;
             showPreview(i);
@@ -719,6 +899,8 @@
           });
           fileList.appendChild(div);
         });
+        fileList.scrollTop = prevScroll;
+        updateOverrideButtons();
       }
 
       function showPreview(idx) {
@@ -728,6 +910,11 @@
         previewImg.onload = () => {
           imgNatW = previewImg.naturalWidth;
           imgNatH = previewImg.naturalHeight;
+          activeCrop = files[idx].crop ?? batchCrop;
+          if (!files[idx].info) {
+            files[idx].info = { w: imgNatW, h: imgNatH, size: files[idx].file.size };
+            renderFileList();
+          }
           URL.revokeObjectURL(url);
           // auto-fit
           const wrap = canvasWrap;
@@ -735,12 +922,14 @@
           const scaleY = (wrap.clientHeight - 64) / imgNatH;
           zoom = Math.min(1, scaleX, scaleY);
           applyZoom();
+          updateInputs();
           updateCropBoxVisual();
         };
         previewImg.src = url;
         dropZone.style.display = 'none';
         previewContainer.style.display = 'block';
         exportBtn.disabled = false;
+        updateOverrideButtons();
       }
 
       function applyZoom() {
@@ -772,10 +961,10 @@
 
       // Input fields -> crop rect
       function inputsToCrop() {
-        cropRect.x = parseInt(inX.value) || 0;
-        cropRect.y = parseInt(inY.value) || 0;
-        cropRect.w = parseInt(inW.value) || 0;
-        cropRect.h = parseInt(inH.value) || 0;
+        activeCrop.x = parseInt(inX.value) || 0;
+        activeCrop.y = parseInt(inY.value) || 0;
+        activeCrop.w = parseInt(inW.value) || 0;
+        activeCrop.h = parseInt(inH.value) || 0;
         clampCrop();
         updateCropBoxVisual();
       }
@@ -783,30 +972,30 @@
       [inX, inY, inW, inH].forEach((el) => el.addEventListener('input', inputsToCrop));
 
       function clampCrop() {
-        cropRect.x = Math.max(0, Math.min(cropRect.x, imgNatW - 1));
-        cropRect.y = Math.max(0, Math.min(cropRect.y, imgNatH - 1));
-        cropRect.w = Math.max(1, Math.min(cropRect.w, imgNatW - cropRect.x));
-        cropRect.h = Math.max(1, Math.min(cropRect.h, imgNatH - cropRect.y));
+        activeCrop.x = Math.max(0, Math.min(activeCrop.x, imgNatW - 1));
+        activeCrop.y = Math.max(0, Math.min(activeCrop.y, imgNatH - 1));
+        activeCrop.w = Math.max(1, Math.min(activeCrop.w, imgNatW - activeCrop.x));
+        activeCrop.h = Math.max(1, Math.min(activeCrop.h, imgNatH - activeCrop.y));
       }
 
       function updateInputs() {
-        inX.value = Math.round(cropRect.x);
-        inY.value = Math.round(cropRect.y);
-        inW.value = Math.round(cropRect.w);
-        inH.value = Math.round(cropRect.h);
+        inX.value = Math.round(activeCrop.x);
+        inY.value = Math.round(activeCrop.y);
+        inW.value = Math.round(activeCrop.w);
+        inH.value = Math.round(activeCrop.h);
       }
 
       function updateCropBoxVisual() {
-        if (!cropRect.w || !cropRect.h) {
+        if (!activeCrop.w || !activeCrop.h) {
           cropBox.style.display = 'none';
           cropOverlay.innerHTML = '';
           return;
         }
         cropBox.style.display = 'block';
-        const sx = cropRect.x * zoom;
-        const sy = cropRect.y * zoom;
-        const sw = cropRect.w * zoom;
-        const sh = cropRect.h * zoom;
+        const sx = activeCrop.x * zoom;
+        const sy = activeCrop.y * zoom;
+        const sw = activeCrop.w * zoom;
+        const sh = activeCrop.h * zoom;
         cropBox.style.left = sx + 'px';
         cropBox.style.top = sy + 'px';
         cropBox.style.width = sw + 'px';
@@ -821,7 +1010,7 @@
     <div class="mask-right" style="left:${sx + sw}px;top:${sy}px;width:${iw - sx - sw}px;height:${sh}px;"></div>
   `;
 
-        coordsDisplay.innerHTML = `<span>${Math.round(cropRect.x)}, ${Math.round(cropRect.y)}</span> &nbsp; <span>${Math.round(cropRect.w)} × ${Math.round(cropRect.h)}</span>`;
+        coordsDisplay.innerHTML = `<span>${Math.round(activeCrop.x)}, ${Math.round(activeCrop.y)}</span> &nbsp; <span>${Math.round(activeCrop.w)} × ${Math.round(activeCrop.h)}</span>`;
       }
 
       // Mouse crop interaction
@@ -839,7 +1028,7 @@
 
         const handle = e.target.dataset.handle;
         dragStart = { x: e.clientX, y: e.clientY };
-        cropStart = { ...cropRect };
+        cropStart = { ...activeCrop };
         isDragging = true;
 
         if (handle) {
@@ -851,8 +1040,8 @@
         } else {
           // New selection
           const p = imgPos(e);
-          cropRect = { x: p.x, y: p.y, w: 0, h: 0 };
-          cropStart = { ...cropRect };
+          Object.assign(activeCrop, { x: p.x, y: p.y, w: 0, h: 0 });
+          cropStart = { ...activeCrop };
           dragMode = 'new';
           document.body.style.cursor = 'crosshair';
         }
@@ -867,18 +1056,17 @@
           const p = imgPos(e);
           const x = Math.min(cropStart.x, p.x);
           const y = Math.min(cropStart.y, p.y);
-          const w = Math.abs(p.x - cropStart.x);
-          const h = Math.abs(p.y - cropStart.y);
-          cropRect = { x, y, w, h };
+          let w = Math.abs(p.x - cropStart.x);
+          let h = Math.abs(p.y - cropStart.y);
+          if (aspectRatio) h = w / aspectRatio;
+          Object.assign(activeCrop, { x, y, w, h });
         } else if (dragMode === 'move') {
-          cropRect.x = cropStart.x + dx;
-          cropRect.y = cropStart.y + dy;
-          cropRect.w = cropStart.w;
-          cropRect.h = cropStart.h;
+          activeCrop.x = cropStart.x + dx;
+          activeCrop.y = cropStart.y + dy;
+          activeCrop.w = cropStart.w;
+          activeCrop.h = cropStart.h;
         } else {
           let { x, y, w, h } = cropStart;
-          let r = x + w,
-            b = y + h;
 
           if (dragMode.includes('l')) {
             x = cropStart.x + dx;
@@ -894,7 +1082,7 @@
           if (dragMode.includes('b') && dragMode !== 'bl') {
             h = cropStart.h + dy;
           }
-          // edge handles
+          // Edge handles (tm/bm/ml/mr) intentionally do not enforce aspectRatio
           if (dragMode === 'tm') {
             y = cropStart.y + dy;
             h = cropStart.h - dy;
@@ -916,7 +1104,13 @@
           if (h < 1) {
             h = 1;
           }
-          cropRect = { x, y, w, h };
+
+          // Apply aspect ratio constraint for corner handles
+          if (aspectRatio && ['tl', 'tr', 'bl', 'br'].includes(dragMode)) {
+            h = w / aspectRatio;
+          }
+
+          Object.assign(activeCrop, { x, y, w, h });
         }
 
         clampCrop();
@@ -934,8 +1128,26 @@
       });
 
       // Reset crop
+      document.getElementById('save-override').addEventListener('click', () => {
+        if (!files[activeIndex]) return;
+        if (!activeCrop.w || !activeCrop.h) return; // don't save a zero-area crop
+        files[activeIndex].crop = { ...activeCrop };
+        activeCrop = files[activeIndex].crop;
+        renderFileList();
+      });
+
+      document.getElementById('clear-override').addEventListener('click', () => {
+        if (!files[activeIndex]) return;
+        files[activeIndex].crop = null;
+        activeCrop = batchCrop;
+        updateInputs();
+        updateCropBoxVisual();
+        renderFileList();
+      });
+
       document.getElementById('reset-crop').addEventListener('click', () => {
-        cropRect = { x: 0, y: 0, w: imgNatW, h: imgNatH };
+        // Note: intentionally resets to full image, does not snap to aspectRatio
+        Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
         updateInputs();
         updateCropBoxVisual();
       });
@@ -943,8 +1155,12 @@
       // Export
       document.getElementById('export-btn').addEventListener('click', async () => {
         if (!files.length) return;
-        if (!cropRect.w || !cropRect.h) {
-          statusText.textContent = 'Select a crop region first.';
+        const uncropped = files.some((f) => {
+          const c = f.crop ?? batchCrop;
+          return !c.w || !c.h;
+        });
+        if (uncropped) {
+          statusText.textContent = 'Select a crop region first (some files have no crop set).';
           return;
         }
 
@@ -977,20 +1193,21 @@
             const img = new Image();
             const url = URL.createObjectURL(f.file);
             img.onload = () => {
+              const crop = f.crop ?? batchCrop;
               const canvas = document.createElement('canvas');
-              canvas.width = Math.round(cropRect.w);
-              canvas.height = Math.round(cropRect.h);
+              canvas.width = Math.round(crop.w);
+              canvas.height = Math.round(crop.h);
               const ctx = canvas.getContext('2d');
               ctx.drawImage(
                 img,
-                Math.round(cropRect.x),
-                Math.round(cropRect.y),
-                Math.round(cropRect.w),
-                Math.round(cropRect.h),
+                Math.round(crop.x),
+                Math.round(crop.y),
+                Math.round(crop.w),
+                Math.round(crop.h),
                 0,
                 0,
-                Math.round(cropRect.w),
-                Math.round(cropRect.h)
+                Math.round(crop.w),
+                Math.round(crop.h)
               );
               URL.revokeObjectURL(url);
               canvas.toBlob(resolve, format, 0.95);
@@ -1022,6 +1239,67 @@
         progressFill.style.width = '100%';
         statusText.textContent = `Done - ${total} file${total > 1 ? 's' : ''} zipped and downloaded`;
         exportBtn.disabled = false;
+      });
+
+      // Aspect ratio lock
+      const ratioSelect = document.getElementById('ratio-select');
+      const customRatioInputs = document.getElementById('custom-ratio-inputs');
+      const ratioW = document.getElementById('ratio-w');
+      const ratioH = document.getElementById('ratio-h');
+
+      function updateAspectRatio() {
+        const val = ratioSelect.value;
+        if (val === 'free') {
+          aspectRatio = null;
+          customRatioInputs.style.display = 'none';
+        } else if (val === 'custom') {
+          customRatioInputs.style.display = 'flex';
+          const w = parseFloat(ratioW.value) || 16;
+          const h = parseFloat(ratioH.value) || 9;
+          const ratio = w / h;
+          aspectRatio = isFinite(ratio) && ratio > 0 ? ratio : null;
+        } else {
+          customRatioInputs.style.display = 'none';
+          aspectRatio = parseFloat(val);
+        }
+      }
+
+      ratioSelect.addEventListener('change', updateAspectRatio);
+      ratioW.addEventListener('input', updateAspectRatio);
+      ratioH.addEventListener('input', updateAspectRatio);
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+        if (!imgNatW) return;
+
+        const step = e.shiftKey ? 10 : 1;
+
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          activeCrop.x -= step;
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          activeCrop.x += step;
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          activeCrop.y -= step;
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          activeCrop.y += step;
+        } else if (e.key === 'r' || e.key === 'R') {
+          Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
+          clampCrop();
+          updateInputs();
+          updateCropBoxVisual();
+          return;
+        } else {
+          return;
+        }
+
+        clampCrop();
+        updateInputs();
+        updateCropBoxVisual();
       });
     </script>
   </body>

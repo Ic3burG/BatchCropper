@@ -71,3 +71,50 @@
 - Enabled GitHub Pages on the repository via API/Settings (source: GitHub Actions)
 
 **Status:** ✅ Deployment automation implemented and verified via PR #4
+
+---
+
+## Session: February 18, 2026 (v1.1 Feature Development)
+
+### ✨ BatchCropper v1.1 — All Four Quality-of-Life Features
+
+**Goal:** Design and implement all v1.1 roadmap features: aspect ratio lock, keyboard shortcuts, per-file crop override, and image info display.
+
+**Process:** Full brainstorm → design doc → implementation plan → subagent-driven development with spec + code quality review after each task.
+
+**Design decisions made:**
+
+- Aspect ratio lock constrains only new drags and corner handle resizes (not edge handles, which have unambiguous single-axis intent)
+- Per-file crop override uses an explicit "Save crop for this file" button rather than auto-saving on file switch; files fall back to the shared batch crop unless explicitly overridden
+- Keyboard nudge is global (active whenever a text input/select is not focused)
+- `activeCrop` pointer pattern introduced so all display/edit functions write through a single reference that switches between the batch default and a file's override
+
+**Architecture change (`index.html`):**
+
+- `cropRect` renamed to `batchCrop` (shared batch default, never read directly in display/edit code)
+- `activeCrop` added as a pointer that always targets the current edit subject (`files[i].crop ?? batchCrop`)
+- `files[]` entries enriched with `crop: null` (per-file override) and `info: null` (image dimensions + size)
+- All innerHTML usage for file list items replaced with `createElement`/`textContent` DOM construction (XSS fix)
+
+**Features implemented:**
+
+- **Image Info Display** — each file list item now shows a subtitle line (`1920 x 1080 - 2.4 MB`); dimensions are populated eagerly on first preview and via a background sequential pre-loader for all other files; file size is always available immediately
+- **Keyboard Shortcuts** — `←↑→↓` nudge the crop region 1px (10px with Shift); `R` resets to full image; suppressed when any input or select is focused
+- **Aspect Ratio Lock** — sidebar dropdown with Free / 1:1 / 4:3 / 3:2 / 16:9 / Custom options; custom shows inline W:H number inputs; ratio constrained on new drag selections and corner handle resizes; invalid custom ratios (zero/NaN) safely fall back to Free
+- **Per-file Crop Override** — "Save crop for this file" button snapshots `activeCrop` into `files[i].crop` and redirects the `activeCrop` pointer; "Clear file override" removes it and reverts to `batchCrop`; overridden files show a `custom` badge in the file list; export uses `f.crop ?? batchCrop` per file
+
+**Quality issues caught and fixed during review:**
+
+- Pre-loader IIFE closure: added `const localFiles = files` snapshot to prevent stale writes if `loadFiles()` is called again mid-loop
+- `renderFileList()` scroll position: saved/restored `fileList.scrollTop` across the full DOM rebuild so background pre-loader updates don't reset the scroll
+- Export guard: replaced single-file `activeCrop.w/h` check with an all-files check (`files.some(f => !(f.crop ?? batchCrop).w)`) to prevent silently corrupt exports when some files have no crop set
+- Save override guard: added `if (!activeCrop.w || !activeCrop.h) return` to prevent saving a zero-area "custom" override
+- Removed dead `escapeHtml` function (made redundant by the DOM construction refactor) and dead `r`, `b` variables in the handle-resize block
+
+**Docs committed:**
+
+- `docs/plans/2026-02-18-v1.1-design.md` — full design spec
+- `docs/plans/2026-02-18-v1.1-plan.md` — step-by-step implementation plan
+- `docs/ROADMAP.md` — all four v1.1 items marked `[x]`
+
+**Status:** ✅ All v1.1 features implemented, reviewed, and formatted. Pending PR to merge into `main` (branch protection requires PR + CI).

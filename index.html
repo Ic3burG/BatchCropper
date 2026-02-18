@@ -496,6 +496,25 @@
       #reset-crop {
         margin-top: 8px;
       }
+
+      .quality-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .quality-row label {
+        flex-shrink: 0;
+      }
+
+      .template-legend {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--text-dim);
+        margin-top: 4px;
+        opacity: 0.7;
+      }
     </style>
   </head>
   <body>
@@ -679,7 +698,32 @@
                 <option value="image/webp">WEBP</option>
               </select>
             </div>
+            <div class="input-group" id="quality-container" style="display: none; margin-top: 8px">
+              <label>Quality (<span id="quality-val">95</span>%)</label>
+              <input
+                type="range"
+                id="export-quality"
+                min="0.01"
+                max="1.00"
+                step="0.01"
+                value="0.95"
+                style="width: 100%"
+              />
+            </div>
+            <div class="input-group" style="margin-top: 8px">
+              <label>Filename Template</label>
+              <input
+                type="text"
+                id="filename-template"
+                value="{name}_cropped"
+                placeholder="{name}_cropped"
+              />
+              <div class="template-legend">{name} {w} {h} {idx}</div>
+            </div>
           </div>
+          <button class="btn btn-ghost btn-full" id="download-active-btn" disabled style="margin-bottom: 8px">
+            ▼ Download Active File
+          </button>
           <button class="btn btn-primary btn-full" id="export-btn" disabled>
             ▼ Download All Cropped
           </button>

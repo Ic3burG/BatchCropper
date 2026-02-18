@@ -701,13 +701,14 @@
         renderFileList();
         showPreview(0);
         (async () => {
-          for (let i = 0; i < files.length; i++) {
-            if (files[i].info) continue;
+          const localFiles = files; // snapshot — immune to replacement if loadFiles() is called again
+          for (let i = 0; i < localFiles.length; i++) {
+            if (localFiles[i].info) continue;
             await new Promise((resolve) => {
               const img = new Image();
-              const url = URL.createObjectURL(files[i].file);
+              const url = URL.createObjectURL(localFiles[i].file);
               img.onload = () => {
-                files[i].info = { w: img.naturalWidth, h: img.naturalHeight, size: files[i].file.size };
+                localFiles[i].info = { w: img.naturalWidth, h: img.naturalHeight, size: localFiles[i].file.size };
                 URL.revokeObjectURL(url);
                 renderFileList();
                 resolve();
@@ -741,6 +742,7 @@
       }
 
       function renderFileList() {
+        const prevScroll = fileList.scrollTop;
         fileCount.textContent = files.length;
         fileList.innerHTML = '';
         files.forEach((f, i) => {
@@ -777,6 +779,7 @@
           });
           fileList.appendChild(div);
         });
+        fileList.scrollTop = prevScroll;
       }
 
       function showPreview(idx) {

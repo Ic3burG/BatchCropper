@@ -190,7 +190,8 @@
         box-shadow:
           0 0 0 1px rgba(0, 0, 0, 0.5),
           inset 0 0 0 1px rgba(0, 0, 0, 0.5);
-        pointer-events: none;
+        pointer-events: auto;
+        cursor: move;
         display: none;
       }
 
@@ -591,6 +592,14 @@
                   <option value="1.7778">16:9</option>
                   <option value="custom">Custom</option>
                 </select>
+                <button
+                  id="invert-ratio"
+                  class="btn btn-ghost"
+                  style="padding: 6px; flex-shrink: 0"
+                  title="Invert Ratio"
+                >
+                  ⇅
+                </button>
                 <span id="custom-ratio-inputs" style="display: none; gap: 4px; align-items: center">
                   <input
                     type="number"
@@ -834,27 +843,6 @@
         document.getElementById('clear-override').style.display = hasOverride ? 'block' : 'none';
       }
 
-      function clearFiles() {
-        files = [];
-        activeIndex = 0;
-        cropRect = { x: 0, y: 0, w: 0, h: 0 };
-        renderFileList();
-
-        // Reset UI
-        previewContainer.style.display = 'none';
-        dropZone.style.display = 'flex';
-        exportBtn.disabled = true;
-        fileInput.value = ''; // Allow selecting same files again
-
-        // Reset crop inputs
-        inX.value = 0;
-        inY.value = 0;
-        inW.value = 0;
-        inH.value = 0;
-
-        updateCropBoxVisual();
-      }
-
       function renderFileList() {
         const prevScroll = fileList.scrollTop;
         fileCount.textContent = files.length;
@@ -1061,10 +1049,8 @@
           if (aspectRatio) h = w / aspectRatio;
           Object.assign(activeCrop, { x, y, w, h });
         } else if (dragMode === 'move') {
-          activeCrop.x = cropStart.x + dx;
-          activeCrop.y = cropStart.y + dy;
-          activeCrop.w = cropStart.w;
-          activeCrop.h = cropStart.h;
+          activeCrop.x = Math.max(0, Math.min(cropStart.x + dx, imgNatW - cropStart.w));
+          activeCrop.y = Math.max(0, Math.min(cropStart.y + dy, imgNatH - cropStart.h));
         } else {
           let { x, y, w, h } = cropStart;
 
@@ -1267,6 +1253,61 @@
       ratioSelect.addEventListener('change', updateAspectRatio);
       ratioW.addEventListener('input', updateAspectRatio);
       ratioH.addEventListener('input', updateAspectRatio);
+
+      document.getElementById('invert-ratio').addEventListener('click', () => {
+        if (ratioSelect.value === 'free') {
+          // If free, just swap the current selection's w and h
+          const oldW = activeCrop.w;
+          const oldH = activeCrop.h;
+          activeCrop.w = oldH;
+          activeCrop.h = oldW;
+        } else {
+          let w, h;
+          if (ratioSelect.value === 'custom') {
+            w = parseFloat(ratioW.value) || 16;
+            h = parseFloat(ratioH.value) || 9;
+          } else {
+            const val = parseFloat(ratioSelect.value);
+            if (val === 1) {
+              w = 1;
+              h = 1;
+            } else if (val === 1.3333) {
+              w = 4;
+              h = 3;
+            } else if (val === 1.5) {
+              w = 3;
+              h = 2;
+            } else if (val === 1.7778) {
+              w = 16;
+              h = 9;
+            } else {
+              w = 1;
+              h = 1 / val;
+            }
+          }
+
+          // Swap inputs and set to custom
+          ratioW.value = h;
+          ratioH.value = w;
+          ratioSelect.value = 'custom';
+          updateAspectRatio();
+
+          // Swap selection dimensions to match new ratio
+          const oldW = activeCrop.w;
+          const oldH = activeCrop.h;
+          activeCrop.w = oldH;
+          activeCrop.h = oldW;
+
+          // Ensure it still matches ratio exactly after swap (in case of rounding)
+          if (aspectRatio) {
+            activeCrop.h = activeCrop.w / aspectRatio;
+          }
+        }
+
+        clampCrop();
+        updateInputs();
+        updateCropBoxVisual();
+      });
 
       // Keyboard shortcuts
       document.addEventListener('keydown', (e) => {

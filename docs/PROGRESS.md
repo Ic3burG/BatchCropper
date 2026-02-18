@@ -118,3 +118,24 @@
 - `docs/ROADMAP.md` — all four v1.1 items marked `[x]`
 
 **Status:** ✅ All v1.1 features implemented, reviewed, and formatted. Pending PR to merge into `main` (branch protection requires PR + CI).
+
+---
+
+### 🖱️ UX Enhancements: Mouse Move & Ratio Inversion
+
+**Goal:** Improve selection ergonomics by allowing direct dragging of the crop box and quick orientation flipping.
+
+**Changes Made:**
+
+- **Direct Mouse Move**: Enabled `pointer-events: auto` on the `#crop-box` and added a `dragMode === 'move'` handler. Users can now click and drag the selection box itself to reposition it without resetting the selection.
+- **Invert Aspect Ratio**: Added an ⇅ button next to the ratio dropdown. Clicking it swaps the width and height of both the aspect ratio settings and the current selection's dimensions.
+- **Code Cleanup**: Identified and removed a redundant duplicate definition of the `clearFiles` function in `index.html`.
+- **Bug Fix**: Improved the `move` logic to correctly clamp the crop box position within image boundaries while preserving its exact dimensions.
+
+**Verification:**
+
+- Verified that clicking inside the crop box now allows moving it rather than starting a new selection.
+- Verified that the Invert button correctly swaps 16:9 to 9:16 and adjusts the selection.
+- `npm run format:check` passes. ✅
+
+**Status:** ✅ UX enhancements completed and merged into `main`.

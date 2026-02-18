@@ -1,5 +1,6 @@
 # BatchCropper
 
+[![CI](https://github.com/Ic3burG/BatchCropper/actions/workflows/ci.yml/badge.svg)](https://github.com/Ic3burG/BatchCropper/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
 A fast, privacy-first, **client-side** batch image cropping tool that runs entirely in your browser. No uploads, no servers, no accounts — just drop your images, set a crop region once, and download all cropped files in a ZIP.
@@ -56,6 +57,24 @@ open index.html
 # or serve with any static server:
 npx serve .
 ```
+
+## Development Setup
+
+BatchCropper has no build step for end users, but contributors need [Node.js](https://nodejs.org/) (v18+) to run the Prettier formatter.
+
+```bash
+git clone https://github.com/Ic3burG/BatchCropper.git
+cd BatchCropper
+npm install
+
+# Activate the pre-push hook (one-time setup)
+git config core.hooksPath .githooks
+```
+
+| Command                | Description                                   |
+| ---------------------- | --------------------------------------------- |
+| `npm run format`       | Auto-format all files with Prettier           |
+| `npm run format:check` | Check formatting without writing (used by CI) |
 
 ## Contributing
 

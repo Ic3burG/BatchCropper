@@ -1,0 +1,20 @@
+#!/bin/sh
+# BatchCropper pre-push hook
+# Runs Prettier format check before every push.
+# Install once: git config core.hooksPath .githooks
+
+echo "🔍 Running Prettier format check..."
+
+npm run format:check
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+  echo ""
+  echo "❌ Prettier check failed. Your code has formatting issues."
+  echo "   Run 'npm run format' to fix them, then commit and push again."
+  echo ""
+  exit 1
+fi
+
+echo "✅ Prettier check passed."
+exit 0

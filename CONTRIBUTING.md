@@ -13,6 +13,21 @@ To ensure that the project remains open-source and to protect both contributors 
 - **Sign Once:** Signing the CLA once covers all projects under OJD Technical Solutions.
 - **Automated Check:** We use CLA Assistant to automatically check pull requests. If you haven't signed the CLA, the assistant will provide a link in your PR to do so.
 
+## Code Formatting
+
+This project uses [Prettier](https://prettier.io/) to enforce consistent code style across all HTML, JS, CSS, and Markdown files.
+
+After cloning, run these commands once to set up your local environment:
+
+```bash
+npm install
+git config core.hooksPath .githooks
+```
+
+The `pre-push` hook will automatically run `npm run format:check` before every push. If it fails, run `npm run format` to auto-fix all issues, then commit and push again.
+
+All pull requests are also checked by the GitHub Actions CI workflow — PRs with formatting issues will not be merged.
+
 ## How to Contribute
 
 1. **Fork the Repository:** Create your own fork of the BatchCropper project.

@@ -566,11 +566,24 @@
               <input type="number" id="crop-h" value="0" min="1" />
             </div>
           </div>
-          <div style="margin-top:8px;">
+          <div style="margin-top: 8px">
             <div class="input-group">
               <label>Ratio</label>
-              <div style="display:flex;gap:6px;align-items:center;">
-                <select id="ratio-select" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 8px;outline:none;border-radius:2px;">
+              <div style="display: flex; gap: 6px; align-items: center">
+                <select
+                  id="ratio-select"
+                  style="
+                    flex: 1;
+                    background: var(--surface2);
+                    border: 1px solid var(--border);
+                    color: var(--text);
+                    font-family: var(--mono);
+                    font-size: 12px;
+                    padding: 6px 8px;
+                    outline: none;
+                    border-radius: 2px;
+                  "
+                >
                   <option value="free">Free</option>
                   <option value="1">1:1</option>
                   <option value="1.3333">4:3</option>
@@ -578,21 +591,57 @@
                   <option value="1.7778">16:9</option>
                   <option value="custom">Custom</option>
                 </select>
-                <span id="custom-ratio-inputs" style="display:none;gap:4px;align-items:center;">
-                  <input type="number" id="ratio-w" value="16" min="1"
-                    style="width:40px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:4px 6px;outline:none;border-radius:2px;" />
-                  <span style="color:var(--text-dim);font-family:var(--mono);font-size:12px;">:</span>
-                  <input type="number" id="ratio-h" value="9" min="1"
-                    style="width:40px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:4px 6px;outline:none;border-radius:2px;" />
+                <span id="custom-ratio-inputs" style="display: none; gap: 4px; align-items: center">
+                  <input
+                    type="number"
+                    id="ratio-w"
+                    value="16"
+                    min="1"
+                    style="
+                      width: 40px;
+                      background: var(--surface2);
+                      border: 1px solid var(--border);
+                      color: var(--text);
+                      font-family: var(--mono);
+                      font-size: 12px;
+                      padding: 4px 6px;
+                      outline: none;
+                      border-radius: 2px;
+                    "
+                  />
+                  <span style="color: var(--text-dim); font-family: var(--mono); font-size: 12px">
+                    :
+                  </span>
+                  <input
+                    type="number"
+                    id="ratio-h"
+                    value="9"
+                    min="1"
+                    style="
+                      width: 40px;
+                      background: var(--surface2);
+                      border: 1px solid var(--border);
+                      color: var(--text);
+                      font-family: var(--mono);
+                      font-size: 12px;
+                      padding: 4px 6px;
+                      outline: none;
+                      border-radius: 2px;
+                    "
+                  />
                 </span>
               </div>
             </div>
           </div>
           <button class="btn btn-ghost btn-full" id="reset-crop">Reset Selection</button>
-          <button class="btn btn-ghost btn-full" id="save-override" style="margin-top:4px;">
+          <button class="btn btn-ghost btn-full" id="save-override" style="margin-top: 4px">
             Save crop for this file
           </button>
-          <button class="btn btn-ghost btn-full" id="clear-override" style="margin-top:4px;display:none;">
+          <button
+            class="btn btn-ghost btn-full"
+            id="clear-override"
+            style="margin-top: 4px; display: none"
+          >
             Clear file override
           </button>
         </div>
@@ -742,7 +791,11 @@
               const img = new Image();
               const url = URL.createObjectURL(localFiles[i].file);
               img.onload = () => {
-                localFiles[i].info = { w: img.naturalWidth, h: img.naturalHeight, size: localFiles[i].file.size };
+                localFiles[i].info = {
+                  w: img.naturalWidth,
+                  h: img.naturalHeight,
+                  size: localFiles[i].file.size,
+                };
                 URL.revokeObjectURL(url);
                 renderFileList();
                 resolve();
@@ -777,7 +830,7 @@
       }
 
       function updateOverrideButtons() {
-        const hasOverride = !!(files[activeIndex]?.crop);
+        const hasOverride = !!files[activeIndex]?.crop;
         document.getElementById('clear-override').style.display = hasOverride ? 'block' : 'none';
       }
 
@@ -799,7 +852,7 @@
 
           const nameEl = document.createElement('div');
           nameEl.className = 'name';
-          nameEl.textContent = f.file.name;  // textContent is safe — no XSS risk
+          nameEl.textContent = f.file.name; // textContent is safe — no XSS risk
 
           const infoEl = document.createElement('div');
           infoEl.className = 'info';
@@ -1081,7 +1134,10 @@
       // Export
       document.getElementById('export-btn').addEventListener('click', async () => {
         if (!files.length) return;
-        const uncropped = files.some((f) => { const c = f.crop ?? batchCrop; return !c.w || !c.h; });
+        const uncropped = files.some((f) => {
+          const c = f.crop ?? batchCrop;
+          return !c.w || !c.h;
+        });
         if (uncropped) {
           statusText.textContent = 'Select a crop region first (some files have no crop set).';
           return;
@@ -1191,31 +1247,39 @@
       ratioW.addEventListener('input', updateAspectRatio);
       ratioH.addEventListener('input', updateAspectRatio);
 
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-      if (!imgNatW) return;
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+        if (!imgNatW) return;
 
-      const step = e.shiftKey ? 10 : 1;
+        const step = e.shiftKey ? 10 : 1;
 
-      if (e.key === 'ArrowLeft')       { e.preventDefault(); activeCrop.x -= step; }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); activeCrop.x += step; }
-      else if (e.key === 'ArrowUp')    { e.preventDefault(); activeCrop.y -= step; }
-      else if (e.key === 'ArrowDown')  { e.preventDefault(); activeCrop.y += step; }
-      else if (e.key === 'r' || e.key === 'R') {
-        Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          activeCrop.x -= step;
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          activeCrop.x += step;
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          activeCrop.y -= step;
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          activeCrop.y += step;
+        } else if (e.key === 'r' || e.key === 'R') {
+          Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
+          clampCrop();
+          updateInputs();
+          updateCropBoxVisual();
+          return;
+        } else {
+          return;
+        }
+
         clampCrop();
         updateInputs();
         updateCropBoxVisual();
-        return;
-      } else {
-        return;
-      }
-
-      clampCrop();
-      updateInputs();
-      updateCropBoxVisual();
-    });
+      });
     </script>
   </body>
 </html>

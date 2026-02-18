@@ -1,7 +1,9 @@
 # BatchCropper
 
 [![CI](https://github.com/Ic3burG/BatchCropper/actions/workflows/ci.yml/badge.svg)](https://github.com/Ic3burG/BatchCropper/actions/workflows/ci.yml)
+[![Deploy to GitHub Pages](https://github.com/Ic3burG/BatchCropper/actions/workflows/pages.yml/badge.svg)](https://github.com/Ic3burG/BatchCropper/actions/workflows/pages.yml)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/live%20demo-GitHub%20Pages-brightgreen)](https://ic3burg.github.io/BatchCropper/)
 
 A fast, privacy-first, **client-side** batch image cropping tool that runs entirely in your browser. No uploads, no servers, no accounts — just drop your images, set a crop region once, and download all cropped files in a ZIP.
 
@@ -25,7 +27,9 @@ BatchCropper is designed with your privacy as the top priority.
 
 ## Usage
 
-1. **Open** `index.html` in any modern browser (Chrome, Firefox, Safari, Edge).
+> **Try it now:** [ic3burg.github.io/BatchCropper](https://ic3burg.github.io/BatchCropper/) — no install required.
+
+1. **Open** the [live demo](https://ic3burg.github.io/BatchCropper/) or `index.html` locally in any modern browser (Chrome, Firefox, Safari, Edge).
 2. **Drop** your images onto the canvas area, or click to browse.
 3. **Draw** a crop region by dragging on the image preview.
 4. **Adjust** using the numeric inputs (X, Y, Width, Height) for precision.

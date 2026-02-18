@@ -82,7 +82,7 @@ git config core.hooksPath .githooks
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines and information about our Contributor License Agreement (CLA).
+Contributions are welcome! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines and information about our Contributor License Agreement (CLA).
 
 ## License
 

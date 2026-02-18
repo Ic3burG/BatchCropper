@@ -616,7 +616,8 @@
       let files = [];
       let activeIndex = 0;
       let zoom = 1;
-      let cropRect = { x: 0, y: 0, w: 0, h: 0 }; // in image pixels
+      let batchCrop = { x: 0, y: 0, w: 0, h: 0 }; // in image pixels
+      let activeCrop = batchCrop;
       let imgNatW = 0,
         imgNatH = 0;
       let isDragging = false;
@@ -674,11 +675,15 @@
         if (newFiles.length) loadFiles([...files.map((f) => f.file), ...newFiles]);
       });
 
+      function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
       function loadFiles(fileArr) {
         if (!fileArr.length) return;
-        files = fileArr.map((f) => ({ file: f, done: false }));
+        files = fileArr.map((f) => ({ file: f, done: false, crop: null, info: null }));
         activeIndex = 0;
-        cropRect = { x: 0, y: 0, w: 0, h: 0 };
+        Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 }); activeCrop = batchCrop;
         renderFileList();
         showPreview(0);
       }
@@ -686,7 +691,7 @@
       function clearFiles() {
         files = [];
         activeIndex = 0;
-        cropRect = { x: 0, y: 0, w: 0, h: 0 };
+        Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 }); activeCrop = batchCrop;
         renderFileList();
 
         // Reset UI
@@ -711,7 +716,7 @@
           const div = document.createElement('div');
           div.className =
             'file-item' + (i === activeIndex ? ' active' : '') + (f.done ? ' done' : '');
-          div.innerHTML = `<div class="status"></div><span class="name">${f.file.name}</span>`;
+          div.innerHTML = `<div class="status"></div><span class="name">${escapeHtml(f.file.name)}</span>`;
           div.addEventListener('click', () => {
             activeIndex = i;
             showPreview(i);
@@ -728,6 +733,7 @@
         previewImg.onload = () => {
           imgNatW = previewImg.naturalWidth;
           imgNatH = previewImg.naturalHeight;
+          activeCrop = files[idx].crop ?? batchCrop;
           URL.revokeObjectURL(url);
           // auto-fit
           const wrap = canvasWrap;
@@ -735,6 +741,7 @@
           const scaleY = (wrap.clientHeight - 64) / imgNatH;
           zoom = Math.min(1, scaleX, scaleY);
           applyZoom();
+          updateInputs();
           updateCropBoxVisual();
         };
         previewImg.src = url;
@@ -772,10 +779,10 @@
 
       // Input fields -> crop rect
       function inputsToCrop() {
-        cropRect.x = parseInt(inX.value) || 0;
-        cropRect.y = parseInt(inY.value) || 0;
-        cropRect.w = parseInt(inW.value) || 0;
-        cropRect.h = parseInt(inH.value) || 0;
+        activeCrop.x = parseInt(inX.value) || 0;
+        activeCrop.y = parseInt(inY.value) || 0;
+        activeCrop.w = parseInt(inW.value) || 0;
+        activeCrop.h = parseInt(inH.value) || 0;
         clampCrop();
         updateCropBoxVisual();
       }
@@ -783,30 +790,30 @@
       [inX, inY, inW, inH].forEach((el) => el.addEventListener('input', inputsToCrop));
 
       function clampCrop() {
-        cropRect.x = Math.max(0, Math.min(cropRect.x, imgNatW - 1));
-        cropRect.y = Math.max(0, Math.min(cropRect.y, imgNatH - 1));
-        cropRect.w = Math.max(1, Math.min(cropRect.w, imgNatW - cropRect.x));
-        cropRect.h = Math.max(1, Math.min(cropRect.h, imgNatH - cropRect.y));
+        activeCrop.x = Math.max(0, Math.min(activeCrop.x, imgNatW - 1));
+        activeCrop.y = Math.max(0, Math.min(activeCrop.y, imgNatH - 1));
+        activeCrop.w = Math.max(1, Math.min(activeCrop.w, imgNatW - activeCrop.x));
+        activeCrop.h = Math.max(1, Math.min(activeCrop.h, imgNatH - activeCrop.y));
       }
 
       function updateInputs() {
-        inX.value = Math.round(cropRect.x);
-        inY.value = Math.round(cropRect.y);
-        inW.value = Math.round(cropRect.w);
-        inH.value = Math.round(cropRect.h);
+        inX.value = Math.round(activeCrop.x);
+        inY.value = Math.round(activeCrop.y);
+        inW.value = Math.round(activeCrop.w);
+        inH.value = Math.round(activeCrop.h);
       }
 
       function updateCropBoxVisual() {
-        if (!cropRect.w || !cropRect.h) {
+        if (!activeCrop.w || !activeCrop.h) {
           cropBox.style.display = 'none';
           cropOverlay.innerHTML = '';
           return;
         }
         cropBox.style.display = 'block';
-        const sx = cropRect.x * zoom;
-        const sy = cropRect.y * zoom;
-        const sw = cropRect.w * zoom;
-        const sh = cropRect.h * zoom;
+        const sx = activeCrop.x * zoom;
+        const sy = activeCrop.y * zoom;
+        const sw = activeCrop.w * zoom;
+        const sh = activeCrop.h * zoom;
         cropBox.style.left = sx + 'px';
         cropBox.style.top = sy + 'px';
         cropBox.style.width = sw + 'px';
@@ -821,7 +828,7 @@
     <div class="mask-right" style="left:${sx + sw}px;top:${sy}px;width:${iw - sx - sw}px;height:${sh}px;"></div>
   `;
 
-        coordsDisplay.innerHTML = `<span>${Math.round(cropRect.x)}, ${Math.round(cropRect.y)}</span> &nbsp; <span>${Math.round(cropRect.w)} × ${Math.round(cropRect.h)}</span>`;
+        coordsDisplay.innerHTML = `<span>${Math.round(activeCrop.x)}, ${Math.round(activeCrop.y)}</span> &nbsp; <span>${Math.round(activeCrop.w)} × ${Math.round(activeCrop.h)}</span>`;
       }
 
       // Mouse crop interaction
@@ -839,7 +846,7 @@
 
         const handle = e.target.dataset.handle;
         dragStart = { x: e.clientX, y: e.clientY };
-        cropStart = { ...cropRect };
+        cropStart = { ...activeCrop };
         isDragging = true;
 
         if (handle) {
@@ -851,8 +858,8 @@
         } else {
           // New selection
           const p = imgPos(e);
-          cropRect = { x: p.x, y: p.y, w: 0, h: 0 };
-          cropStart = { ...cropRect };
+          Object.assign(activeCrop, { x: p.x, y: p.y, w: 0, h: 0 });
+          cropStart = { ...activeCrop };
           dragMode = 'new';
           document.body.style.cursor = 'crosshair';
         }
@@ -869,12 +876,12 @@
           const y = Math.min(cropStart.y, p.y);
           const w = Math.abs(p.x - cropStart.x);
           const h = Math.abs(p.y - cropStart.y);
-          cropRect = { x, y, w, h };
+          Object.assign(activeCrop, { x, y, w, h });
         } else if (dragMode === 'move') {
-          cropRect.x = cropStart.x + dx;
-          cropRect.y = cropStart.y + dy;
-          cropRect.w = cropStart.w;
-          cropRect.h = cropStart.h;
+          activeCrop.x = cropStart.x + dx;
+          activeCrop.y = cropStart.y + dy;
+          activeCrop.w = cropStart.w;
+          activeCrop.h = cropStart.h;
         } else {
           let { x, y, w, h } = cropStart;
           let r = x + w,
@@ -916,7 +923,7 @@
           if (h < 1) {
             h = 1;
           }
-          cropRect = { x, y, w, h };
+          Object.assign(activeCrop, { x, y, w, h });
         }
 
         clampCrop();
@@ -935,7 +942,7 @@
 
       // Reset crop
       document.getElementById('reset-crop').addEventListener('click', () => {
-        cropRect = { x: 0, y: 0, w: imgNatW, h: imgNatH };
+        Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
         updateInputs();
         updateCropBoxVisual();
       });
@@ -943,7 +950,7 @@
       // Export
       document.getElementById('export-btn').addEventListener('click', async () => {
         if (!files.length) return;
-        if (!cropRect.w || !cropRect.h) {
+        if (!batchCrop.w || !batchCrop.h) {
           statusText.textContent = 'Select a crop region first.';
           return;
         }
@@ -978,19 +985,19 @@
             const url = URL.createObjectURL(f.file);
             img.onload = () => {
               const canvas = document.createElement('canvas');
-              canvas.width = Math.round(cropRect.w);
-              canvas.height = Math.round(cropRect.h);
+              canvas.width = Math.round(batchCrop.w);
+              canvas.height = Math.round(batchCrop.h);
               const ctx = canvas.getContext('2d');
               ctx.drawImage(
                 img,
-                Math.round(cropRect.x),
-                Math.round(cropRect.y),
-                Math.round(cropRect.w),
-                Math.round(cropRect.h),
+                Math.round(batchCrop.x),
+                Math.round(batchCrop.y),
+                Math.round(batchCrop.w),
+                Math.round(batchCrop.h),
                 0,
                 0,
-                Math.round(cropRect.w),
-                Math.round(cropRect.h)
+                Math.round(batchCrop.w),
+                Math.round(batchCrop.h)
               );
               URL.revokeObjectURL(url);
               canvas.toBlob(resolve, format, 0.95);

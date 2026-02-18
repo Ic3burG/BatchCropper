@@ -496,6 +496,25 @@
       #reset-crop {
         margin-top: 8px;
       }
+
+      .quality-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .quality-row label {
+        flex-shrink: 0;
+      }
+
+      .template-legend {
+        font-family: var(--mono);
+        font-size: 9px;
+        color: var(--text-dim);
+        margin-top: 4px;
+        opacity: 0.7;
+      }
     </style>
   </head>
   <body>
@@ -679,7 +698,41 @@
                 <option value="image/webp">WEBP</option>
               </select>
             </div>
+            <div class="input-group" id="quality-container" style="display: none; margin-top: 8px">
+              <label>
+                Quality (
+                <span id="quality-val">95</span>
+                %)
+              </label>
+              <input
+                type="range"
+                id="export-quality"
+                min="0.01"
+                max="1.00"
+                step="0.01"
+                value="0.95"
+                style="width: 100%"
+              />
+            </div>
+            <div class="input-group" style="margin-top: 8px">
+              <label>Filename Template</label>
+              <input
+                type="text"
+                id="filename-template"
+                value="{name}_cropped"
+                placeholder="{name}_cropped"
+              />
+              <div class="template-legend">{name} {w} {h} {idx}</div>
+            </div>
           </div>
+          <button
+            class="btn btn-ghost btn-full"
+            id="download-active-btn"
+            disabled
+            style="margin-bottom: 8px"
+          >
+            ▼ Download Active File
+          </button>
           <button class="btn btn-primary btn-full" id="export-btn" disabled>
             ▼ Download All Cropped
           </button>
@@ -721,6 +774,8 @@
       let zoom = 1;
       let batchCrop = { x: 0, y: 0, w: 0, h: 0 }; // in image pixels
       let activeCrop = batchCrop;
+      let exportQuality = 0.95;
+      let filenameTemplate = '{name}_cropped';
       let aspectRatio = null; // null = free; positive number = width/height ratio
       let imgNatW = 0,
         imgNatH = 0;
@@ -744,6 +799,13 @@
       const progressFill = document.getElementById('progress-fill');
       const statusText = document.getElementById('status-text');
       const canvasWrap = document.getElementById('canvas-wrap');
+
+      // Export settings elements
+      const qualityContainer = document.getElementById('quality-container');
+      const exportQualityInput = document.getElementById('export-quality');
+      const qualityVal = document.getElementById('quality-val');
+      const filenameTemplateInput = document.getElementById('filename-template');
+      const downloadActiveBtn = document.getElementById('download-active-btn');
 
       // Inputs
       const inX = document.getElementById('crop-x');
@@ -782,6 +844,14 @@
       function formatSize(bytes) {
         if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         return Math.round(bytes / 1024) + ' KB';
+      }
+
+      function resolveTemplate(template, data) {
+        return template
+          .replace(/{name}/g, data.name)
+          .replace(/{w}/g, Math.round(data.w))
+          .replace(/{h}/g, Math.round(data.h))
+          .replace(/{idx}/g, data.idx);
       }
 
       function loadFiles(fileArr) {
@@ -827,6 +897,7 @@
         previewContainer.style.display = 'none';
         dropZone.style.display = 'flex';
         exportBtn.disabled = true;
+        downloadActiveBtn.disabled = true;
         fileInput.value = ''; // Allow selecting same files again
 
         // Reset crop inputs
@@ -917,6 +988,7 @@
         dropZone.style.display = 'none';
         previewContainer.style.display = 'block';
         exportBtn.disabled = false;
+        downloadActiveBtn.disabled = false;
         updateOverrideButtons();
       }
 
@@ -928,6 +1000,21 @@
         document.getElementById('zoom-label').textContent = Math.round(zoom * 100) + '%';
         updateCropBoxVisual();
       }
+
+      filenameTemplateInput.addEventListener('input', (e) => {
+        filenameTemplate = e.target.value;
+      });
+
+      exportQualityInput.addEventListener('input', (e) => {
+        exportQuality = parseFloat(e.target.value);
+        qualityVal.textContent = Math.round(exportQuality * 100);
+      });
+
+      document.getElementById('export-format').addEventListener('change', (e) => {
+        const format = e.target.value;
+        qualityContainer.style.display =
+          format === 'image/jpeg' || format === 'image/webp' ? 'block' : 'none';
+      });
 
       // Zoom controls
       document.getElementById('zoom-in').addEventListener('click', () => {
@@ -1196,14 +1283,20 @@
                 Math.round(crop.h)
               );
               URL.revokeObjectURL(url);
-              canvas.toBlob(resolve, format, 0.95);
+              canvas.toBlob(resolve, format, exportQuality);
             };
             img.src = url;
           });
 
           const nameParts = f.file.name.split('.');
-          nameParts.pop();
-          const filename = nameParts.join('.') + '_cropped.' + ext;
+          const baseName = nameParts.slice(0, -1).join('.');
+          const resolvedBase = resolveTemplate(filenameTemplate, {
+            name: baseName,
+            w: crop.w,
+            h: crop.h,
+            idx: i + 1,
+          });
+          const filename = resolvedBase + '.' + ext;
           zip.file(filename, blob);
           f.done = true;
           renderFileList();
@@ -1226,6 +1319,65 @@
         statusText.textContent = `Done - ${total} file${total > 1 ? 's' : ''} zipped and downloaded`;
         exportBtn.disabled = false;
       });
+
+      async function downloadActiveFile() {
+        const f = files[activeIndex];
+        if (!f) return;
+        const crop = f.crop ?? batchCrop;
+        if (!crop.w || !crop.h) {
+          statusText.textContent = 'Select a crop region first.';
+          return;
+        }
+
+        const format = document.getElementById('export-format').value;
+        const ext = format === 'image/png' ? 'png' : format === 'image/jpeg' ? 'jpg' : 'webp';
+
+        statusText.textContent = `Processing ${f.file.name}...`;
+
+        const blob = await new Promise((resolve) => {
+          const img = new Image();
+          const url = URL.createObjectURL(f.file);
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(crop.w);
+            canvas.height = Math.round(crop.h);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(
+              img,
+              Math.round(crop.x),
+              Math.round(crop.y),
+              Math.round(crop.w),
+              Math.round(crop.h),
+              0,
+              0,
+              Math.round(crop.w),
+              Math.round(crop.h)
+            );
+            URL.revokeObjectURL(url);
+            canvas.toBlob(resolve, format, exportQuality);
+          };
+          img.src = url;
+        });
+
+        const nameParts = f.file.name.split('.');
+        const baseName = nameParts.slice(0, -1).join('.');
+        const resolvedBase = resolveTemplate(filenameTemplate, {
+          name: baseName,
+          w: crop.w,
+          h: crop.h,
+          idx: activeIndex + 1,
+        });
+        const filename = resolvedBase + '.' + ext;
+
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        statusText.textContent = `Downloaded: ${filename}`;
+      }
+
+      downloadActiveBtn.addEventListener('click', downloadActiveFile);
 
       // Aspect ratio lock
       const ratioSelect = document.getElementById('ratio-select');

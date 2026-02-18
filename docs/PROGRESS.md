@@ -139,3 +139,29 @@
 - `npm run format:check` passes. ✅
 
 **Status:** ✅ UX enhancements completed and merged into `main`.
+
+---
+
+## Session: February 18, 2026 (v1.2 Feature Development)
+
+### 📦 BatchCropper v1.2 — Export Enhancements
+
+**Goal:** Design and implement v1.2 roadmap features: JPEG quality slider, filename templates, and individual file download.
+
+**Changes Made:**
+
+- **JPEG Quality Slider**: Added a range input (0.01–1.00) that appears only when JPEG or WebP is selected. It controls the compression quality for the exported blobs.
+- **Output Filename Template**: Added a template system for exported files.
+  - Supports placeholders: `{name}` (original filename), `{w}` (width), `{h}` (height), and `{idx}` (1-based file index).
+  - Default template: `{name}_cropped`.
+- **Individual File Download**: Added a "▼ Download Active File" button that allows users to export and download just the currently selected image without waiting for a full batch ZIP.
+- **State Management**: Integrated `exportQuality` and `filenameTemplate` into the global state and updated all export functions to use them.
+
+**Verification:**
+
+- Verified quality slider visibility toggles correctly based on format.
+- Verified filename templates resolve correctly for both batch and single exports.
+- Verified individual download triggers a direct browser download.
+- `npm run format:check` passes. ✅
+
+**Status:** ✅ v1.2 features completed and pushed to branch `v1.2-export-enhancements`.

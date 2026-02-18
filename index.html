@@ -765,6 +765,8 @@
       let zoom = 1;
       let batchCrop = { x: 0, y: 0, w: 0, h: 0 }; // in image pixels
       let activeCrop = batchCrop;
+      let exportQuality = 0.95;
+      let filenameTemplate = '{name}_cropped';
       let aspectRatio = null; // null = free; positive number = width/height ratio
       let imgNatW = 0,
         imgNatH = 0;
@@ -788,6 +790,13 @@
       const progressFill = document.getElementById('progress-fill');
       const statusText = document.getElementById('status-text');
       const canvasWrap = document.getElementById('canvas-wrap');
+
+      // Export settings elements
+      const qualityContainer = document.getElementById('quality-container');
+      const exportQualityInput = document.getElementById('export-quality');
+      const qualityVal = document.getElementById('quality-val');
+      const filenameTemplateInput = document.getElementById('filename-template');
+      const downloadActiveBtn = document.getElementById('download-active-btn');
 
       // Inputs
       const inX = document.getElementById('crop-x');
@@ -871,6 +880,7 @@
         previewContainer.style.display = 'none';
         dropZone.style.display = 'flex';
         exportBtn.disabled = true;
+        downloadActiveBtn.disabled = true;
         fileInput.value = ''; // Allow selecting same files again
 
         // Reset crop inputs
@@ -961,6 +971,7 @@
         dropZone.style.display = 'none';
         previewContainer.style.display = 'block';
         exportBtn.disabled = false;
+        downloadActiveBtn.disabled = false;
         updateOverrideButtons();
       }
 
@@ -972,6 +983,21 @@
         document.getElementById('zoom-label').textContent = Math.round(zoom * 100) + '%';
         updateCropBoxVisual();
       }
+
+      filenameTemplateInput.addEventListener('input', (e) => {
+        filenameTemplate = e.target.value;
+      });
+
+      exportQualityInput.addEventListener('input', (e) => {
+        exportQuality = parseFloat(e.target.value);
+        qualityVal.textContent = Math.round(exportQuality * 100);
+      });
+
+      document.getElementById('export-format').addEventListener('change', (e) => {
+        const format = e.target.value;
+        qualityContainer.style.display =
+          format === 'image/jpeg' || format === 'image/webp' ? 'block' : 'none';
+      });
 
       // Zoom controls
       document.getElementById('zoom-in').addEventListener('click', () => {

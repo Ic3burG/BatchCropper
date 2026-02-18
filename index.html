@@ -424,6 +424,15 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      .file-item .info {
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--text-dim);
+        opacity: 0.6;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
 
       .empty-files {
         display: flex;
@@ -679,6 +688,11 @@
         return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       }
 
+      function formatSize(bytes) {
+        if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        return Math.round(bytes / 1024) + ' KB';
+      }
+
       function loadFiles(fileArr) {
         if (!fileArr.length) return;
         files = fileArr.map((f) => ({ file: f, done: false, crop: null, info: null }));
@@ -686,6 +700,23 @@
         Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 }); activeCrop = batchCrop;
         renderFileList();
         showPreview(0);
+        (async () => {
+          for (let i = 0; i < files.length; i++) {
+            if (files[i].info) continue;
+            await new Promise((resolve) => {
+              const img = new Image();
+              const url = URL.createObjectURL(files[i].file);
+              img.onload = () => {
+                files[i].info = { w: img.naturalWidth, h: img.naturalHeight, size: files[i].file.size };
+                URL.revokeObjectURL(url);
+                renderFileList();
+                resolve();
+              };
+              img.onerror = resolve;
+              img.src = url;
+            });
+          }
+        })();
       }
 
       function clearFiles() {
@@ -716,7 +747,29 @@
           const div = document.createElement('div');
           div.className =
             'file-item' + (i === activeIndex ? ' active' : '') + (f.done ? ' done' : '');
-          div.innerHTML = `<div class="status"></div><span class="name">${escapeHtml(f.file.name)}</span>`;
+          // Build info text
+          const infoText = f.info
+            ? `${f.info.w} x ${f.info.h} - ${formatSize(f.file.size)}`
+            : `... x ... - ${formatSize(f.file.size)}`;
+
+          const statusDot = document.createElement('div');
+          statusDot.className = 'status';
+
+          const nameEl = document.createElement('div');
+          nameEl.className = 'name';
+          nameEl.textContent = f.file.name;  // textContent is safe — no XSS risk
+
+          const infoEl = document.createElement('div');
+          infoEl.className = 'info';
+          infoEl.textContent = infoText;
+
+          const textWrap = document.createElement('div');
+          textWrap.style.cssText = 'min-width:0;flex:1;overflow:hidden;';
+          textWrap.appendChild(nameEl);
+          textWrap.appendChild(infoEl);
+
+          div.appendChild(statusDot);
+          div.appendChild(textWrap);
           div.addEventListener('click', () => {
             activeIndex = i;
             showPreview(i);
@@ -734,6 +787,10 @@
           imgNatW = previewImg.naturalWidth;
           imgNatH = previewImg.naturalHeight;
           activeCrop = files[idx].crop ?? batchCrop;
+          if (!files[idx].info) {
+            files[idx].info = { w: imgNatW, h: imgNatH, size: files[idx].file.size };
+            renderFileList();
+          }
           URL.revokeObjectURL(url);
           // auto-fit
           const wrap = canvasWrap;

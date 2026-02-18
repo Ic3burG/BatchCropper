@@ -721,10 +721,6 @@
         if (newFiles.length) loadFiles([...files.map((f) => f.file), ...newFiles]);
       });
 
-      function escapeHtml(str) {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      }
-
       function formatSize(bytes) {
         if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         return Math.round(bytes / 1024) + ' KB';
@@ -734,7 +730,8 @@
         if (!fileArr.length) return;
         files = fileArr.map((f) => ({ file: f, done: false, crop: null, info: null }));
         activeIndex = 0;
-        Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 }); activeCrop = batchCrop;
+        Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 });
+        activeCrop = batchCrop;
         renderFileList();
         showPreview(0);
         (async () => {
@@ -760,7 +757,8 @@
       function clearFiles() {
         files = [];
         activeIndex = 0;
-        Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 }); activeCrop = batchCrop;
+        Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 });
+        activeCrop = batchCrop;
         renderFileList();
 
         // Reset UI
@@ -995,8 +993,6 @@
           activeCrop.h = cropStart.h;
         } else {
           let { x, y, w, h } = cropStart;
-          let r = x + w,
-            b = y + h;
 
           if (dragMode.includes('l')) {
             x = cropStart.x + dx;
@@ -1012,7 +1008,7 @@
           if (dragMode.includes('b') && dragMode !== 'bl') {
             h = cropStart.h + dy;
           }
-          // edge handles
+          // Edge handles (tm/bm/ml/mr) intentionally do not enforce aspectRatio
           if (dragMode === 'tm') {
             y = cropStart.y + dy;
             h = cropStart.h - dy;
@@ -1060,6 +1056,7 @@
       // Reset crop
       document.getElementById('save-override').addEventListener('click', () => {
         if (!files[activeIndex]) return;
+        if (!activeCrop.w || !activeCrop.h) return; // don't save a zero-area crop
         files[activeIndex].crop = { ...activeCrop };
         activeCrop = files[activeIndex].crop;
         renderFileList();
@@ -1075,6 +1072,7 @@
       });
 
       document.getElementById('reset-crop').addEventListener('click', () => {
+        // Note: intentionally resets to full image, does not snap to aspectRatio
         Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
         updateInputs();
         updateCropBoxVisual();

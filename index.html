@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Batch Crop</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0e0e;
+    --surface: #161616;
+    --surface2: #1f1f1f;
+    --border: #2a2a2a;
+    --accent: #f0c040;
+    --accent2: #ff6b35;
+    --text: #e8e8e8;
+    --text-dim: #888;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  header .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 2px;
+  }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 53px);
+  }
+
+  /* MAIN CANVAS AREA */
+  .canvas-area {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+
+  .canvas-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+
+  .canvas-toolbar .coords {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-left: auto;
+  }
+
+  .canvas-toolbar .coords span {
+    color: var(--accent);
+  }
+
+  .canvas-wrap {
+    flex: 1;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: repeating-conic-gradient(#1a1a1a 0% 25%, #141414 0% 50%) 0 0 / 20px 20px;
+    position: relative;
+  }
+
+  .drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    height: 100%;
+    border: 2px dashed var(--border);
+    margin: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .drop-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(240,192,64,0.05);
+  }
+
+  .drop-zone-icon {
+    font-size: 40px;
+    opacity: 0.3;
+  }
+
+  .drop-zone p {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.8;
+  }
+
+  .drop-zone p strong {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  #preview-container {
+    position: relative;
+    display: none;
+    cursor: crosshair;
+    user-select: none;
+    flex-shrink: 0;
+  }
+
+  #preview-img {
+    display: block;
+    max-width: none;
+  }
+
+  #crop-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+  }
+
+  /* Dark mask around selection */
+  .mask-top, .mask-bottom, .mask-left, .mask-right {
+    position: absolute;
+    background: rgba(0,0,0,0.55);
+    pointer-events: none;
+  }
+
+  #crop-box {
+    position: absolute;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.5);
+    pointer-events: none;
+    display: none;
+  }
+
+  /* Rule-of-thirds grid lines */
+  #crop-box::before, #crop-box::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  #crop-box::before {
+    background:
+      linear-gradient(to right, rgba(255,255,255,0.15) 1px, transparent 1px) 33.33% 0 / 33.33% 100%,
+      linear-gradient(to bottom, rgba(255,255,255,0.15) 1px, transparent 1px) 0 33.33% / 100% 33.33%;
+  }
+
+  .handle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    border: 1px solid #000;
+    pointer-events: all;
+    cursor: inherit;
+  }
+
+  .handle.tl { top: -5px; left: -5px; cursor: nw-resize; }
+  .handle.tr { top: -5px; right: -5px; cursor: ne-resize; }
+  .handle.bl { bottom: -5px; left: -5px; cursor: sw-resize; }
+  .handle.br { bottom: -5px; right: -5px; cursor: se-resize; }
+  .handle.tm { top: -5px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+  .handle.bm { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+  .handle.ml { top: 50%; left: -5px; transform: translateY(-50%); cursor: w-resize; }
+  .handle.mr { top: 50%; right: -5px; transform: translateY(-50%); cursor: e-resize; }
+
+  /* SIDEBAR */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .sidebar-section {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+    flex-shrink: 0;
+  }
+
+  .sidebar-section h2 {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .input-group label {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .input-group input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 6px 8px;
+    outline: none;
+    border-radius: 2px;
+    transition: border-color 0.15s;
+  }
+
+  .input-group input:focus {
+    border-color: var(--accent);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .btn-primary:hover { background: #ffd060; }
+  .btn-primary:disabled { background: #444; color: #666; cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+
+  .btn-ghost:hover { border-color: var(--text-dim); color: var(--text); }
+
+  .btn-full { width: 100%; }
+
+  .file-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .file-list::-webkit-scrollbar { width: 4px; }
+  .file-list::-webkit-scrollbar-track { background: transparent; }
+  .file-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .file-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.1s;
+    font-size: 11px;
+    font-family: var(--mono);
+    color: var(--text-dim);
+  }
+
+  .file-item:hover { background: var(--surface2); }
+
+  .file-item.active {
+    background: var(--surface2);
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .file-item .status {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  .file-item.done .status { background: #4caf50; }
+  .file-item .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .empty-files {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 8px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    transition: width 0.3s;
+    width: 0%;
+  }
+
+  .status-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 6px;
+  }
+
+  .zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .zoom-controls .zoom-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    min-width: 36px;
+    text-align: center;
+  }
+
+  #reset-crop {
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Batch Crop</h1>
+  <span class="tag">client-side · no upload</span>
+</header>
+
+<div class="workspace">
+  <div class="canvas-area">
+    <div class="canvas-toolbar">
+      <div class="zoom-controls">
+        <button class="btn btn-ghost" id="zoom-out" style="padding:4px 8px;">−</button>
+        <span class="zoom-val" id="zoom-label">100%</span>
+        <button class="btn btn-ghost" id="zoom-in" style="padding:4px 8px;">+</button>
+        <button class="btn btn-ghost" id="zoom-fit" style="padding:4px 8px; font-size:10px;">Fit</button>
+      </div>
+      <div class="coords" id="coords-display">drag to select crop region</div>
+    </div>
+    <div class="canvas-wrap" id="canvas-wrap">
+      <div class="drop-zone" id="drop-zone">
+        <div class="drop-zone-icon">⬚</div>
+        <p>Drop images here<br><strong>or click to browse</strong><br><span style="opacity:0.5">PNG, JPG, WEBP · multiple files OK</span></p>
+        <input type="file" id="file-input" accept="image/*" multiple style="display:none">
+      </div>
+      <div id="preview-container">
+        <img id="preview-img" draggable="false">
+        <div id="crop-overlay"></div>
+        <div id="crop-box">
+          <div class="handle tl" data-handle="tl"></div>
+          <div class="handle tm" data-handle="tm"></div>
+          <div class="handle tr" data-handle="tr"></div>
+          <div class="handle ml" data-handle="ml"></div>
+          <div class="handle mr" data-handle="mr"></div>
+          <div class="handle bl" data-handle="bl"></div>
+          <div class="handle bm" data-handle="bm"></div>
+          <div class="handle br" data-handle="br"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h2>Crop Region (px)</h2>
+      <div class="input-grid">
+        <div class="input-group">
+          <label>X</label>
+          <input type="number" id="crop-x" value="0" min="0">
+        </div>
+        <div class="input-group">
+          <label>Y</label>
+          <input type="number" id="crop-y" value="0" min="0">
+        </div>
+        <div class="input-group">
+          <label>Width</label>
+          <input type="number" id="crop-w" value="0" min="1">
+        </div>
+        <div class="input-group">
+          <label>Height</label>
+          <input type="number" id="crop-h" value="0" min="1">
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-full" id="reset-crop">Reset Selection</button>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Export</h2>
+      <div style="margin-bottom:8px;">
+        <div class="input-group">
+          <label>Format</label>
+          <select id="export-format" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 8px;outline:none;border-radius:2px;">
+            <option value="image/png">PNG</option>
+            <option value="image/jpeg">JPEG</option>
+            <option value="image/webp">WEBP</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" id="export-btn" disabled>
+        ▼ Download All Cropped
+      </button>
+      <div class="progress-bar" id="progress-bar" style="display:none">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="status-text" id="status-text"></div>
+    </div>
+
+    <div class="sidebar-section" style="flex-shrink:0;">
+      <h2>Files <span id="file-count" style="color:var(--text-dim)">0</span></h2>
+    </div>
+    <div class="file-list" id="file-list">
+      <div class="empty-files">
+        <span style="font-size:24px;opacity:0.2">⬚</span>
+        Drop images to get started
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// State
+let files = [];
+let activeIndex = 0;
+let zoom = 1;
+let cropRect = { x: 0, y: 0, w: 0, h: 0 };  // in image pixels
+let imgNatW = 0, imgNatH = 0;
+let isDragging = false;
+let dragMode = null; // 'new', 'move', 'tl','tr','bl','br','tm','bm','ml','mr'
+let dragStart = { x: 0, y: 0 };
+let cropStart = { x: 0, y: 0, w: 0, h: 0 };
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const previewContainer = document.getElementById('preview-container');
+const previewImg = document.getElementById('preview-img');
+const cropBox = document.getElementById('crop-box');
+const cropOverlay = document.getElementById('crop-overlay');
+const coordsDisplay = document.getElementById('coords-display');
+const exportBtn = document.getElementById('export-btn');
+const fileList = document.getElementById('file-list');
+const fileCount = document.getElementById('file-count');
+const progressBar = document.getElementById('progress-bar');
+const progressFill = document.getElementById('progress-fill');
+const statusText = document.getElementById('status-text');
+const canvasWrap = document.getElementById('canvas-wrap');
+
+// Inputs
+const inX = document.getElementById('crop-x');
+const inY = document.getElementById('crop-y');
+const inW = document.getElementById('crop-w');
+const inH = document.getElementById('crop-h');
+
+// Drop zone
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => loadFiles(Array.from(e.target.files)));
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  dropZone.classList.remove('drag-over');
+  loadFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+});
+
+// Also handle drop on canvas wrap when files are loaded (stopPropagation prevents double-firing with dropZone)
+canvasWrap.addEventListener('dragover', e => e.preventDefault());
+canvasWrap.addEventListener('drop', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  const newFiles = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+  if (newFiles.length) loadFiles([...files.map(f=>f.file), ...newFiles]);
+});
+
+function loadFiles(fileArr) {
+  if (!fileArr.length) return;
+  files = fileArr.map(f => ({ file: f, done: false }));
+  activeIndex = 0;
+  cropRect = { x: 0, y: 0, w: 0, h: 0 };
+  renderFileList();
+  showPreview(0);
+}
+
+function renderFileList() {
+  fileCount.textContent = files.length;
+  fileList.innerHTML = '';
+  files.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = 'file-item' + (i === activeIndex ? ' active' : '') + (f.done ? ' done' : '');
+    div.innerHTML = `<div class="status"></div><span class="name">${f.file.name}</span>`;
+    div.addEventListener('click', () => { activeIndex = i; showPreview(i); renderFileList(); });
+    fileList.appendChild(div);
+  });
+}
+
+function showPreview(idx) {
+  const f = files[idx];
+  if (!f) return;
+  const url = URL.createObjectURL(f.file);
+  previewImg.onload = () => {
+    imgNatW = previewImg.naturalWidth;
+    imgNatH = previewImg.naturalHeight;
+    URL.revokeObjectURL(url);
+    // auto-fit
+    const wrap = canvasWrap;
+    const scaleX = (wrap.clientWidth - 64) / imgNatW;
+    const scaleY = (wrap.clientHeight - 64) / imgNatH;
+    zoom = Math.min(1, scaleX, scaleY);
+    applyZoom();
+    updateCropBoxVisual();
+  };
+  previewImg.src = url;
+  dropZone.style.display = 'none';
+  previewContainer.style.display = 'block';
+  exportBtn.disabled = false;
+}
+
+function applyZoom() {
+  previewImg.style.width = (imgNatW * zoom) + 'px';
+  previewImg.style.height = (imgNatH * zoom) + 'px';
+  previewContainer.style.width = (imgNatW * zoom) + 'px';
+  previewContainer.style.height = (imgNatH * zoom) + 'px';
+  document.getElementById('zoom-label').textContent = Math.round(zoom * 100) + '%';
+  updateCropBoxVisual();
+}
+
+// Zoom controls
+document.getElementById('zoom-in').addEventListener('click', () => { zoom = Math.min(zoom * 1.25, 8); applyZoom(); });
+document.getElementById('zoom-out').addEventListener('click', () => { zoom = Math.max(zoom / 1.25, 0.05); applyZoom(); });
+document.getElementById('zoom-fit').addEventListener('click', () => {
+  if (!imgNatW) return;
+  const wrap = canvasWrap;
+  const scaleX = (wrap.clientWidth - 64) / imgNatW;
+  const scaleY = (wrap.clientHeight - 64) / imgNatH;
+  zoom = Math.min(1, scaleX, scaleY);
+  applyZoom();
+});
+
+// Input fields -> crop rect
+function inputsToCrop() {
+  cropRect.x = parseInt(inX.value) || 0;
+  cropRect.y = parseInt(inY.value) || 0;
+  cropRect.w = parseInt(inW.value) || 0;
+  cropRect.h = parseInt(inH.value) || 0;
+  clampCrop();
+  updateCropBoxVisual();
+}
+
+[inX, inY, inW, inH].forEach(el => el.addEventListener('input', inputsToCrop));
+
+function clampCrop() {
+  cropRect.x = Math.max(0, Math.min(cropRect.x, imgNatW - 1));
+  cropRect.y = Math.max(0, Math.min(cropRect.y, imgNatH - 1));
+  cropRect.w = Math.max(1, Math.min(cropRect.w, imgNatW - cropRect.x));
+  cropRect.h = Math.max(1, Math.min(cropRect.h, imgNatH - cropRect.y));
+}
+
+function updateInputs() {
+  inX.value = Math.round(cropRect.x);
+  inY.value = Math.round(cropRect.y);
+  inW.value = Math.round(cropRect.w);
+  inH.value = Math.round(cropRect.h);
+}
+
+function updateCropBoxVisual() {
+  if (!cropRect.w || !cropRect.h) {
+    cropBox.style.display = 'none';
+    cropOverlay.innerHTML = '';
+    return;
+  }
+  cropBox.style.display = 'block';
+  const sx = cropRect.x * zoom;
+  const sy = cropRect.y * zoom;
+  const sw = cropRect.w * zoom;
+  const sh = cropRect.h * zoom;
+  cropBox.style.left = sx + 'px';
+  cropBox.style.top = sy + 'px';
+  cropBox.style.width = sw + 'px';
+  cropBox.style.height = sh + 'px';
+
+  const iw = imgNatW * zoom;
+  const ih = imgNatH * zoom;
+  cropOverlay.innerHTML = `
+    <div class="mask-top" style="left:0;top:0;width:${iw}px;height:${sy}px;"></div>
+    <div class="mask-bottom" style="left:0;top:${sy+sh}px;width:${iw}px;height:${ih-sy-sh}px;"></div>
+    <div class="mask-left" style="left:0;top:${sy}px;width:${sx}px;height:${sh}px;"></div>
+    <div class="mask-right" style="left:${sx+sw}px;top:${sy}px;width:${iw-sx-sw}px;height:${sh}px;"></div>
+  `;
+
+  coordsDisplay.innerHTML = `<span>${Math.round(cropRect.x)}, ${Math.round(cropRect.y)}</span> &nbsp; <span>${Math.round(cropRect.w)} × ${Math.round(cropRect.h)}</span>`;
+}
+
+// Mouse crop interaction
+function imgPos(e) {
+  const rect = previewImg.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) / zoom,
+    y: (e.clientY - rect.top) / zoom
+  };
+}
+
+previewContainer.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  e.preventDefault();
+
+  const handle = e.target.dataset.handle;
+  dragStart = { x: e.clientX, y: e.clientY };
+  cropStart = { ...cropRect };
+  isDragging = true;
+
+  if (handle) {
+    dragMode = handle;
+    document.body.style.cursor = e.target.style.cursor;
+  } else if (e.target === cropBox || e.target.closest('#crop-box') === cropBox) {
+    dragMode = 'move';
+    document.body.style.cursor = 'move';
+  } else {
+    // New selection
+    const p = imgPos(e);
+    cropRect = { x: p.x, y: p.y, w: 0, h: 0 };
+    cropStart = { ...cropRect };
+    dragMode = 'new';
+    document.body.style.cursor = 'crosshair';
+  }
+});
+
+document.addEventListener('mousemove', e => {
+  if (!isDragging) return;
+  const dx = (e.clientX - dragStart.x) / zoom;
+  const dy = (e.clientY - dragStart.y) / zoom;
+
+  if (dragMode === 'new') {
+    const p = imgPos(e);
+    const x = Math.min(cropStart.x, p.x);
+    const y = Math.min(cropStart.y, p.y);
+    const w = Math.abs(p.x - cropStart.x);
+    const h = Math.abs(p.y - cropStart.y);
+    cropRect = { x, y, w, h };
+  } else if (dragMode === 'move') {
+    cropRect.x = cropStart.x + dx;
+    cropRect.y = cropStart.y + dy;
+    cropRect.w = cropStart.w;
+    cropRect.h = cropStart.h;
+  } else {
+    let { x, y, w, h } = cropStart;
+    let r = x + w, b = y + h;
+
+    if (dragMode.includes('l')) { x = cropStart.x + dx; w = cropStart.w - dx; }
+    if (dragMode.includes('r')) { w = cropStart.w + dx; }
+    if (dragMode.includes('t') && dragMode !== 'tr') { y = cropStart.y + dy; h = cropStart.h - dy; }
+    if (dragMode.includes('b') && dragMode !== 'bl') { h = cropStart.h + dy; }
+    // edge handles
+    if (dragMode === 'tm') { y = cropStart.y + dy; h = cropStart.h - dy; }
+    if (dragMode === 'bm') { h = cropStart.h + dy; }
+    if (dragMode === 'ml') { x = cropStart.x + dx; w = cropStart.w - dx; }
+    if (dragMode === 'mr') { w = cropStart.w + dx; }
+
+    if (w < 1) { w = 1; }
+    if (h < 1) { h = 1; }
+    cropRect = { x, y, w, h };
+  }
+
+  clampCrop();
+  updateInputs();
+  updateCropBoxVisual();
+});
+
+document.addEventListener('mouseup', () => {
+  if (!isDragging) return;
+  isDragging = false;
+  document.body.style.cursor = '';
+  clampCrop();
+  updateInputs();
+  updateCropBoxVisual();
+});
+
+// Reset crop
+document.getElementById('reset-crop').addEventListener('click', () => {
+  cropRect = { x: 0, y: 0, w: imgNatW, h: imgNatH };
+  updateInputs();
+  updateCropBoxVisual();
+});
+
+// Export
+document.getElementById('export-btn').addEventListener('click', async () => {
+  if (!files.length) return;
+  if (!cropRect.w || !cropRect.h) {
+    statusText.textContent = 'Select a crop region first.';
+    return;
+  }
+
+  const format = document.getElementById('export-format').value;
+  const ext = format === 'image/png' ? 'png' : format === 'image/jpeg' ? 'jpg' : 'webp';
+  const total = files.length;
+
+  progressBar.style.display = 'block';
+  exportBtn.disabled = true;
+  statusText.textContent = 'Loading JSZip...';
+
+  // Load JSZip dynamically
+  await new Promise((resolve, reject) => {
+    if (window.JSZip) return resolve();
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+
+  const zip = new JSZip();
+
+  for (let i = 0; i < total; i++) {
+    const f = files[i];
+    statusText.textContent = `Processing ${i+1}/${total}: ${f.file.name}`;
+    progressFill.style.width = ((i / total) * 100) + '%';
+
+    const blob = await new Promise(resolve => {
+      const img = new Image();
+      const url = URL.createObjectURL(f.file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(cropRect.w);
+        canvas.height = Math.round(cropRect.h);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, Math.round(cropRect.x), Math.round(cropRect.y), Math.round(cropRect.w), Math.round(cropRect.h), 0, 0, Math.round(cropRect.w), Math.round(cropRect.h));
+        URL.revokeObjectURL(url);
+        canvas.toBlob(resolve, format, 0.95);
+      };
+      img.src = url;
+    });
+
+    const nameParts = f.file.name.split('.');
+    nameParts.pop();
+    const filename = nameParts.join('.') + '_cropped.' + ext;
+    zip.file(filename, blob);
+    f.done = true;
+    renderFileList();
+  }
+
+  statusText.textContent = 'Generating zip...';
+  progressFill.style.width = '99%';
+
+  const zipBlob = await zip.generateAsync({ type: 'blob' }, meta => {
+    progressFill.style.width = (99 + meta.percent * 0.01) + '%';
+  });
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(zipBlob);
+  a.download = `cropped_${total}_files.zip`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+
+  progressFill.style.width = '100%';
+  statusText.textContent = `Done - ${total} file${total>1?'s':''} zipped and downloaded`;
+  exportBtn.disabled = false;
+});
+</script>
+</body>
+</html>

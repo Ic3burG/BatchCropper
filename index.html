@@ -1083,8 +1083,9 @@
       // Export
       document.getElementById('export-btn').addEventListener('click', async () => {
         if (!files.length) return;
-        if (!activeCrop.w || !activeCrop.h) {
-          statusText.textContent = 'Select a crop region first.';
+        const uncropped = files.some((f) => { const c = f.crop ?? batchCrop; return !c.w || !c.h; });
+        if (uncropped) {
+          statusText.textContent = 'Select a crop region first (some files have no crop set).';
           return;
         }
 

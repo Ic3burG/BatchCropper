@@ -919,6 +919,8 @@
         if (!fileArr.length) return;
         files = fileArr.map((f) => ({ file: f, done: false, crop: null, info: null }));
         activeIndex = 0;
+        cropHistory = [];
+        historyIndex = -1;
         Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 });
         activeCrop = batchCrop;
         renderFileList();
@@ -950,6 +952,8 @@
       function clearFiles() {
         files = [];
         activeIndex = 0;
+        cropHistory = [];
+        historyIndex = -1;
         Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 });
         activeCrop = batchCrop;
         renderFileList();
@@ -1024,6 +1028,8 @@
       }
 
       function showPreview(idx) {
+        cropHistory = [];
+        historyIndex = -1;
         const f = files[idx];
         if (!f) return;
         const url = URL.createObjectURL(f.file);
@@ -1106,6 +1112,7 @@
       }
 
       [inX, inY, inW, inH].forEach((el) => el.addEventListener('input', inputsToCrop));
+      [inX, inY, inW, inH].forEach((el) => el.addEventListener('change', pushHistory));
 
       function clampCrop() {
         activeCrop.x = Math.max(0, Math.min(activeCrop.x, imgNatW - 1));
@@ -1274,6 +1281,7 @@
         clampCrop();
         updateInputs();
         updateCropBoxVisual();
+        pushHistory();
       });
 
       // Reset crop
@@ -1283,6 +1291,7 @@
         files[activeIndex].crop = { ...activeCrop };
         activeCrop = files[activeIndex].crop;
         renderFileList();
+        pushHistory();
       });
 
       document.getElementById('clear-override').addEventListener('click', () => {
@@ -1292,6 +1301,7 @@
         updateInputs();
         updateCropBoxVisual();
         renderFileList();
+        pushHistory();
       });
 
       document.getElementById('reset-crop').addEventListener('click', () => {
@@ -1299,6 +1309,7 @@
         Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
         updateInputs();
         updateCropBoxVisual();
+        pushHistory();
       });
 
       // Export
@@ -1561,6 +1572,7 @@
           clampCrop();
           updateInputs();
           updateCropBoxVisual();
+          pushHistory();
           return;
         } else {
           return;
@@ -1569,6 +1581,28 @@
         clampCrop();
         updateInputs();
         updateCropBoxVisual();
+        pushHistory();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+        const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z';
+        const isRedo =
+          ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') ||
+          ((e.ctrlKey || e.metaKey) && e.key === 'y');
+        if (!isUndo && !isRedo) return;
+        e.preventDefault();
+        if (isUndo && historyIndex > 0) {
+          historyIndex--;
+          Object.assign(activeCrop, cropHistory[historyIndex]);
+          updateInputs();
+          updateCropBoxVisual();
+        } else if (isRedo && historyIndex < cropHistory.length - 1) {
+          historyIndex++;
+          Object.assign(activeCrop, cropHistory[historyIndex]);
+          updateInputs();
+          updateCropBoxVisual();
+        }
       });
     </script>
   </body>

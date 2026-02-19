@@ -1106,27 +1106,32 @@
 
       filenameTemplateInput.addEventListener('input', (e) => {
         filenameTemplate = e.target.value;
+        saveSettings();
       });
 
       exportQualityInput.addEventListener('input', (e) => {
         exportQuality = parseFloat(e.target.value);
         qualityVal.textContent = Math.round(exportQuality * 100);
+        saveSettings();
       });
 
       document.getElementById('export-format').addEventListener('change', (e) => {
         const format = e.target.value;
         qualityContainer.style.display =
           format === 'image/jpeg' || format === 'image/webp' ? 'block' : 'none';
+        saveSettings();
       });
 
       // Zoom controls
       document.getElementById('zoom-in').addEventListener('click', () => {
         zoom = Math.min(zoom * 1.25, 8);
         applyZoom();
+        saveSettings();
       });
       document.getElementById('zoom-out').addEventListener('click', () => {
         zoom = Math.max(zoom / 1.25, 0.05);
         applyZoom();
+        saveSettings();
       });
       document.getElementById('zoom-fit').addEventListener('click', () => {
         if (!imgNatW) return;
@@ -1135,6 +1140,7 @@
         const scaleY = (wrap.clientHeight - 64) / imgNatH;
         zoom = Math.min(1, scaleX, scaleY);
         applyZoom();
+        saveSettings();
       });
 
       // Input fields -> crop rect
@@ -1542,6 +1548,7 @@
           customRatioInputs.style.display = 'none';
           aspectRatio = parseFloat(val);
         }
+        saveSettings();
       }
 
       ratioSelect.addEventListener('change', updateAspectRatio);
@@ -1639,6 +1646,53 @@
         if (!e.repeat) pushHistory();
       });
 
+      const SETTINGS_KEY = 'batchcrop_settings';
+
+      function saveSettings() {
+        try {
+          localStorage.setItem(
+            SETTINGS_KEY,
+            JSON.stringify({
+              format: document.getElementById('export-format').value,
+              quality: exportQuality,
+              filenameTemplate,
+              ratioSelect: ratioSelect.value,
+              ratioW: parseFloat(ratioW.value) || 16,
+              ratioH: parseFloat(ratioH.value) || 9,
+              zoom,
+            })
+          );
+        } catch (_) {}
+      }
+
+      function loadSettings() {
+        try {
+          const raw = localStorage.getItem(SETTINGS_KEY);
+          if (!raw) return;
+          const s = JSON.parse(raw);
+          const formatEl = document.getElementById('export-format');
+          if (s.format) {
+            formatEl.value = s.format;
+            qualityContainer.style.display =
+              s.format === 'image/jpeg' || s.format === 'image/webp' ? 'block' : 'none';
+          }
+          if (s.quality != null) {
+            exportQuality = s.quality;
+            exportQualityInput.value = s.quality;
+            qualityVal.textContent = Math.round(s.quality * 100);
+          }
+          if (s.filenameTemplate != null) {
+            filenameTemplate = s.filenameTemplate;
+            filenameTemplateInput.value = s.filenameTemplate;
+          }
+          if (s.ratioSelect) ratioSelect.value = s.ratioSelect;
+          if (s.ratioW) ratioW.value = s.ratioW;
+          if (s.ratioH) ratioH.value = s.ratioH;
+          if (s.ratioSelect) updateAspectRatio();
+          if (s.zoom != null) zoom = Math.min(8, Math.max(0.05, s.zoom));
+        } catch (_) {}
+      }
+
       document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
         const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z';
@@ -1659,6 +1713,8 @@
           updateCropBoxVisual();
         }
       });
+
+      loadSettings();
     </script>
   </body>
 </html>

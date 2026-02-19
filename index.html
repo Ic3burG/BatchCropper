@@ -1291,7 +1291,6 @@
         files[activeIndex].crop = { ...activeCrop };
         activeCrop = files[activeIndex].crop;
         renderFileList();
-        pushHistory();
       });
 
       document.getElementById('clear-override').addEventListener('click', () => {
@@ -1301,7 +1300,6 @@
         updateInputs();
         updateCropBoxVisual();
         renderFileList();
-        pushHistory();
       });
 
       document.getElementById('reset-crop').addEventListener('click', () => {
@@ -1581,7 +1579,7 @@
         clampCrop();
         updateInputs();
         updateCropBoxVisual();
-        pushHistory();
+        if (!e.repeat) pushHistory();
       });
 
       document.addEventListener('keydown', (e) => {

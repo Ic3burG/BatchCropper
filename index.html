@@ -840,6 +840,10 @@
       let dragMode = null; // 'new', 'move', 'tl','tr','bl','br','tm','bm','ml','mr'
       let dragStart = { x: 0, y: 0 };
       let cropStart = { x: 0, y: 0, w: 0, h: 0 };
+      // Undo/Redo
+      const HISTORY_LIMIT = 50;
+      let cropHistory = [];
+      let historyIndex = -1;
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
@@ -1108,6 +1112,21 @@
         activeCrop.y = Math.max(0, Math.min(activeCrop.y, imgNatH - 1));
         activeCrop.w = Math.max(1, Math.min(activeCrop.w, imgNatW - activeCrop.x));
         activeCrop.h = Math.max(1, Math.min(activeCrop.h, imgNatH - activeCrop.y));
+      }
+      function pushHistory() {
+        const last = cropHistory[historyIndex];
+        if (
+          last &&
+          last.x === activeCrop.x &&
+          last.y === activeCrop.y &&
+          last.w === activeCrop.w &&
+          last.h === activeCrop.h
+        )
+          return;
+        cropHistory = cropHistory.slice(0, historyIndex + 1);
+        cropHistory.push({ ...activeCrop });
+        if (cropHistory.length > HISTORY_LIMIT) cropHistory.shift();
+        else historyIndex++;
       }
 
       function updateInputs() {

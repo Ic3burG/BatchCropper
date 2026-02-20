@@ -46,9 +46,9 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 ### v1.3 — UX Polish
 
-- [ ] **Undo/Redo**: Step back through crop region changes
-- [ ] **Touch Support**: Basic touch events for tablet use
-- [ ] **Persistent Settings**: Remember last-used format and zoom level via `localStorage`
+- [x] **Undo/Redo**: Step back through crop region changes
+- [x] **Touch Support**: Basic touch events for tablet use
+- [x] **Persistent Settings**: Remember last-used format and zoom level via `localStorage`
 
 ---
 

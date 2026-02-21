@@ -733,6 +733,10 @@
 
         <div class="sidebar-section">
           <h2>Export</h2>
+          <div style="display:flex;gap:6px;margin-bottom:10px;">
+            <button class="btn btn-ghost" id="flip-h-btn" style="flex:1" title="Flip horizontal on export">⇄ Flip H</button>
+            <button class="btn btn-ghost" id="flip-v-btn" style="flex:1" title="Flip vertical on export">⇅ Flip V</button>
+          </div>
           <div style="margin-bottom: 8px">
             <div class="input-group">
               <label>Format</label>
@@ -851,6 +855,8 @@
       // Swipe navigation
       let swipeStartX = 0;
       let swipeStartY = 0;
+      let flipH = false;
+      let flipV = false;
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
@@ -1419,6 +1425,10 @@
               canvas.width = Math.round(crop.w);
               canvas.height = Math.round(crop.h);
               const ctx = canvas.getContext('2d');
+              if (flipH || flipV) {
+                ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
+                ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+              }
               ctx.drawImage(
                 img,
                 Math.round(crop.x),
@@ -1490,6 +1500,10 @@
             canvas.width = Math.round(crop.w);
             canvas.height = Math.round(crop.h);
             const ctx = canvas.getContext('2d');
+            if (flipH || flipV) {
+              ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
+              ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+            }
             ctx.drawImage(
               img,
               Math.round(crop.x),
@@ -1712,6 +1726,29 @@
           updateInputs();
           updateCropBoxVisual();
         }
+      });
+
+      const flipHBtn = document.getElementById('flip-h-btn');
+      const flipVBtn = document.getElementById('flip-v-btn');
+
+      function applyFlipPreview() {
+        const sx = flipH ? -1 : 1;
+        const sy = flipV ? -1 : 1;
+        previewImg.style.transform = `scale(${sx}, ${sy})`;
+      }
+
+      flipHBtn.addEventListener('click', () => {
+        flipH = !flipH;
+        flipHBtn.style.color = flipH ? 'var(--accent)' : '';
+        flipHBtn.style.borderColor = flipH ? 'var(--accent)' : '';
+        applyFlipPreview();
+      });
+
+      flipVBtn.addEventListener('click', () => {
+        flipV = !flipV;
+        flipVBtn.style.color = flipV ? 'var(--accent)' : '';
+        flipVBtn.style.borderColor = flipV ? 'var(--accent)' : '';
+        applyFlipPreview();
       });
 
       loadSettings();

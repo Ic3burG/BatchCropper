@@ -1058,6 +1058,7 @@
       const fileList = document.getElementById('file-list');
       const fileCount = document.getElementById('file-count');
       const clearFilesBtn = document.getElementById('clear-files');
+      const clearDoneBtn = document.getElementById('clear-done-btn');
       const sortSelect = document.getElementById('sort-select');
       const progressBar = document.getElementById('progress-bar');
       const progressFill = document.getElementById('progress-fill');
@@ -1087,6 +1088,21 @@
       dropZone.addEventListener('click', () => fileInput.click());
       fileInput.addEventListener('change', (e) => loadFiles(Array.from(e.target.files)));
       clearFilesBtn.addEventListener('click', clearFiles);
+      clearDoneBtn.addEventListener('click', () => {
+        if (!files.some((f) => f.done)) return;
+        const activeFile = files[activeIndex];
+        files = files.filter((f) => !f.done);
+        if (!files.length) {
+          clearFiles();
+          return;
+        }
+        activeIndex = files.indexOf(activeFile);
+        if (activeIndex < 0) {
+          activeIndex = 0;
+          showPreview(0);
+        }
+        renderFileList();
+      });
 
       fileList.addEventListener(
         'touchstart',
@@ -1194,6 +1210,10 @@
         })();
       }
 
+      function updateClearDoneVisibility() {
+        clearDoneBtn.style.display = files.some((f) => f.done) ? 'inline-block' : 'none';
+      }
+
       function clearFiles() {
         files = [];
         activeIndex = 0;
@@ -1270,6 +1290,7 @@
         });
         fileList.scrollTop = prevScroll;
         updateOverrideButtons();
+        updateClearDoneVisibility();
       }
 
       function showPreview(idx) {

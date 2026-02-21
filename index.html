@@ -1475,8 +1475,8 @@
         const cropH = Math.round(crop.h);
         const cropX = Math.round(crop.x);
         const cropY = Math.round(crop.y);
-        const targetW = resizeW || cropW;
-        const targetH = resizeH || cropH;
+        const targetW = resizeW || (resizeH ? Math.round((resizeH * cropW) / cropH) : cropW);
+        const targetH = resizeH || (resizeW ? Math.round((resizeW * cropH) / cropW) : cropH);
 
         canvas.width = targetW;
         canvas.height = targetH;

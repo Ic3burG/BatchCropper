@@ -946,16 +946,45 @@
 
         <div
           class="sidebar-section"
-          style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between"
+          style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px"
         >
-          <h2 style="margin-bottom: 0">
+          <h2 style="margin-bottom: 0; flex-shrink: 0">
             Files
             <span id="file-count" style="color: var(--text-dim)">0</span>
           </h2>
+          <select
+            id="sort-select"
+            style="
+              flex: 1;
+              min-width: 0;
+              background: var(--surface2);
+              border: 1px solid var(--border);
+              color: var(--text-dim);
+              font-family: var(--mono);
+              font-size: 10px;
+              padding: 2px 4px;
+              outline: none;
+              border-radius: 2px;
+            "
+          >
+            <option value="none">Added</option>
+            <option value="name-asc">Name A→Z</option>
+            <option value="name-desc">Name Z→A</option>
+            <option value="size-asc">Size ↑</option>
+            <option value="size-desc">Size ↓</option>
+            <option value="status">Done last</option>
+          </select>
+          <button
+            class="btn btn-ghost"
+            id="clear-done-btn"
+            style="padding: 2px 6px; font-size: 10px; flex-shrink: 0; display: none"
+          >
+            Clear Done
+          </button>
           <button
             class="btn btn-ghost"
             id="clear-files"
-            style="padding: 2px 6px; font-size: 10px; margin-left: auto"
+            style="padding: 2px 6px; font-size: 10px; flex-shrink: 0"
           >
             Clear
           </button>
@@ -1000,6 +1029,7 @@
       let flipV = false;
       let cropMode = 'px'; // 'px' | 'pct'
       let userPresets = []; // [{name, x, y, w, h}, ...]
+      let sortOrder = 'none';
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
@@ -1012,6 +1042,7 @@
       const fileList = document.getElementById('file-list');
       const fileCount = document.getElementById('file-count');
       const clearFilesBtn = document.getElementById('clear-files');
+      const sortSelect = document.getElementById('sort-select');
       const progressBar = document.getElementById('progress-bar');
       const progressFill = document.getElementById('progress-fill');
       const statusText = document.getElementById('status-text');
@@ -1115,6 +1146,7 @@
         Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 });
         activeCrop = batchCrop;
         renderFileList();
+        applySortOrder(); // keep list sorted after new files are loaded
         showPreview(0);
         (async () => {
           const localFiles = files; // snapshot — immune to replacement if loadFiles() is called again
@@ -1890,6 +1922,7 @@
               ratioW: parseFloat(ratioW.value) || 16,
               ratioH: parseFloat(ratioH.value) || 9,
               zoom,
+              sortOrder,
             })
           );
         } catch (_) {}
@@ -1920,6 +1953,10 @@
           if (s.ratioH) ratioH.value = s.ratioH;
           if (s.ratioSelect) updateAspectRatio();
           if (s.zoom != null) zoom = Math.min(8, Math.max(0.05, s.zoom));
+          if (s.sortOrder) {
+            sortOrder = s.sortOrder;
+            sortSelect.value = s.sortOrder;
+          }
           // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}
       }
@@ -2104,6 +2141,28 @@
 
       loadUserPresets();
       renderUserPresets();
+
+      // ── Sort ─────────────────────────────────────────────────
+      function applySortOrder() {
+        if (sortOrder === 'none' || !files.length) return;
+        const activeFile = files[activeIndex];
+        files.sort((a, b) => {
+          if (sortOrder === 'name-asc') return a.file.name.localeCompare(b.file.name);
+          if (sortOrder === 'name-desc') return b.file.name.localeCompare(a.file.name);
+          if (sortOrder === 'size-asc') return a.file.size - b.file.size;
+          if (sortOrder === 'size-desc') return b.file.size - a.file.size;
+          if (sortOrder === 'status') return (a.done ? 1 : 0) - (b.done ? 1 : 0);
+          return 0;
+        });
+        activeIndex = files.indexOf(activeFile);
+        renderFileList();
+      }
+
+      sortSelect.addEventListener('change', (e) => {
+        sortOrder = e.target.value;
+        applySortOrder();
+        saveSettings();
+      });
 
       loadSettings();
     </script>

@@ -54,8 +54,37 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 ## 🔮 Future Ideas
 
-- **Preset Crop Regions**: Save and recall named crop presets
-- **Batch Resize**: Optionally scale the output to a fixed resolution after cropping
+### v1.4 — Crop Intelligence
+
+- **Smart Crop Suggestions**: Use the browser's `ShapeDetection` API (no server, no library) to detect faces/subjects and auto-propose a centered crop region
+- **Crop by Percentage**: Express crop dimensions as `%` of image size instead of pixels — useful when images vary in resolution but you want the "middle 80%"
+- **Mirror/Flip on Export**: Apply horizontal or vertical flip at export time via canvas compositing; common for social media variants
+
+### v1.5 — Workflow
+
+- **Named Crop Presets**: Save and recall named crop regions (e.g., "Instagram Square", "Twitter Header")
+- **Sort Sidebar**: Sort the file list by filename, file size, or export status
+- **Clear Completed Files**: Remove already-exported files from the list without restarting the session
+- **Batch Resize on Export**: Optionally scale the output to a fixed resolution after cropping
+
+### v1.6 — Export Enhancements
+
+- **AVIF Format Support**: Add `image/avif` as an export format — natively supported by Canvas API in Chrome/Firefox, no new dependency needed
+- **Watermark / Overlay Stamp**: Draw text or a logo at a fixed position on export using canvas compositing
+- **Copy to Clipboard**: Single-file "Copy cropped image" button using the browser Clipboard API
+
+### v1.7 — Visual Aids
+
+- **Golden Ratio Grid Overlay**: Alternative to rule-of-thirds, togglable alongside existing grid
+- **Crop Comparison View**: Side-by-side before/after preview within the canvas
+- **Rotation Handle**: Rotate the crop box (not the image) before export using canvas transform
+
+### v2.0 — New Paradigm (Breaking Changes)
+
+These ideas change the mental model of the tool and warrant a major version bump:
+
+- **Session Save/Restore**: Export current file list + crop settings as a `.json` file and reload it later — introduces stateful sessions as a first-class concept
+- **Scripted Crop Rules**: A small expression language (e.g., `center(1:1)`, `top(16:9)`) for describing crops programmatically, applied to the whole batch; moves BatchCropper from visual-first to scripted-first for power users
 - **PWA / Offline Mode**: Package as a Progressive Web App for offline use
 - **Electron Wrapper**: Native desktop app with folder-level batch processing
 

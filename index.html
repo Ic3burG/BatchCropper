@@ -1475,8 +1475,12 @@
         const cropH = Math.round(crop.h);
         const cropX = Math.round(crop.x);
         const cropY = Math.round(crop.y);
-        const targetW = resizeW || (resizeH ? Math.round((resizeH * cropW) / cropH) : cropW);
-        const targetH = resizeH || (resizeW ? Math.round((resizeW * cropH) / cropW) : cropH);
+        const safeCropW = cropW || 1;
+        const safeCropH = cropH || 1;
+        const targetW =
+          resizeW || (resizeH ? Math.round((resizeH * safeCropW) / safeCropH) : safeCropW);
+        const targetH =
+          resizeH || (resizeW ? Math.round((resizeW * safeCropH) / safeCropW) : safeCropH);
 
         canvas.width = targetW;
         canvas.height = targetH;
@@ -1867,8 +1871,14 @@
 
           const nameParts = f.file.name.split('.');
           const baseName = nameParts.slice(0, -1).join('.');
-          const outW = resizeEnabled && resizeW ? resizeW : Math.round(crop.w);
-          const outH = resizeEnabled && resizeH ? resizeH : Math.round(crop.h);
+          const rCropW = Math.round(crop.w) || 1;
+          const rCropH = Math.round(crop.h) || 1;
+          const outW = resizeEnabled
+            ? resizeW || (resizeH ? Math.round((resizeH * rCropW) / rCropH) : rCropW)
+            : rCropW;
+          const outH = resizeEnabled
+            ? resizeH || (resizeW ? Math.round((resizeW * rCropH) / rCropW) : rCropH)
+            : rCropH;
           const resolvedBase = resolveTemplate(filenameTemplate, {
             name: baseName,
             w: outW,
@@ -1948,8 +1958,14 @@
 
         const nameParts = f.file.name.split('.');
         const baseName = nameParts.slice(0, -1).join('.');
-        const outW = resizeEnabled && resizeW ? resizeW : Math.round(crop.w);
-        const outH = resizeEnabled && resizeH ? resizeH : Math.round(crop.h);
+        const rCropW = Math.round(crop.w) || 1;
+        const rCropH = Math.round(crop.h) || 1;
+        const outW = resizeEnabled
+          ? resizeW || (resizeH ? Math.round((resizeH * rCropW) / rCropH) : rCropW)
+          : rCropW;
+        const outH = resizeEnabled
+          ? resizeH || (resizeW ? Math.round((resizeW * rCropH) / rCropW) : rCropH)
+          : rCropH;
         const resolvedBase = resolveTemplate(filenameTemplate, {
           name: baseName,
           w: outW,

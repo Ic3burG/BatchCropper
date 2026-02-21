@@ -937,6 +937,74 @@
               <div class="template-legend">{name} {w} {h} {idx}</div>
             </div>
           </div>
+          <div class="input-group" style="margin-top: 8px">
+            <label style="display: flex; align-items: center; justify-content: space-between">
+              Resize Output
+              <input type="checkbox" id="resize-enabled-chk" />
+            </label>
+            <div id="resize-inputs" style="display: none; margin-top: 6px">
+              <div style="display: flex; gap: 6px; margin-bottom: 6px">
+                <div style="flex: 1">
+                  <label
+                    style="
+                      font-family: var(--mono);
+                      font-size: 10px;
+                      color: var(--text-dim);
+                      display: block;
+                      margin-bottom: 4px;
+                    "
+                  >
+                    W (px)
+                  </label>
+                  <input
+                    type="number"
+                    id="resize-w"
+                    min="1"
+                    placeholder="auto"
+                    style="width: 100%"
+                  />
+                </div>
+                <div style="flex: 1">
+                  <label
+                    style="
+                      font-family: var(--mono);
+                      font-size: 10px;
+                      color: var(--text-dim);
+                      display: block;
+                      margin-bottom: 4px;
+                    "
+                  >
+                    H (px)
+                  </label>
+                  <input
+                    type="number"
+                    id="resize-h"
+                    min="1"
+                    placeholder="auto"
+                    style="width: 100%"
+                  />
+                </div>
+              </div>
+              <select
+                id="resize-mode-select"
+                style="
+                  width: 100%;
+                  background: var(--surface2);
+                  border: 1px solid var(--border);
+                  color: var(--text);
+                  font-family: var(--mono);
+                  font-size: 12px;
+                  padding: 6px 8px;
+                  outline: none;
+                  border-radius: 2px;
+                "
+              >
+                <option value="fit">Fit (letterbox)</option>
+                <option value="fill">Fill (clip edges)</option>
+                <option value="stretch">Stretch</option>
+              </select>
+            </div>
+          </div>
           <button
             class="btn btn-ghost btn-full"
             id="download-active-btn"
@@ -1046,6 +1114,10 @@
       let cropMode = 'px'; // 'px' | 'pct'
       let userPresets = []; // [{name, x, y, w, h}, ...]
       let sortOrder = 'none';
+      let resizeEnabled = false;
+      let resizeW = 0;
+      let resizeH = 0;
+      let resizeMode = 'fit'; // 'fit' | 'fill' | 'stretch'
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
@@ -1071,6 +1143,11 @@
       const qualityVal = document.getElementById('quality-val');
       const filenameTemplateInput = document.getElementById('filename-template');
       const downloadActiveBtn = document.getElementById('download-active-btn');
+      const resizeEnabledChk = document.getElementById('resize-enabled-chk');
+      const resizeInputsDiv = document.getElementById('resize-inputs');
+      const resizeWInput = document.getElementById('resize-w');
+      const resizeHInput = document.getElementById('resize-h');
+      const resizeModeSelect = document.getElementById('resize-mode-select');
       const detectFacesBtn = document.getElementById('detect-faces-btn');
       const detectFacesStatus = document.getElementById('detect-faces-status');
 
@@ -1392,6 +1469,53 @@
 
       [inX, inY, inW, inH].forEach((el) => el.addEventListener('input', inputsToCrop));
       [inX, inY, inW, inH].forEach((el) => el.addEventListener('change', pushHistory));
+
+      function applyResizeToCanvas(canvas, ctx, img, crop, format) {
+        const cropW = Math.round(crop.w);
+        const cropH = Math.round(crop.h);
+        const cropX = Math.round(crop.x);
+        const cropY = Math.round(crop.y);
+        const targetW = resizeW || cropW;
+        const targetH = resizeH || cropH;
+
+        canvas.width = targetW;
+        canvas.height = targetH;
+
+        if (resizeMode === 'fit') {
+          const scale = Math.min(targetW / cropW, targetH / cropH);
+          const dw = Math.round(cropW * scale);
+          const dh = Math.round(cropH * scale);
+          const dx = Math.round((targetW - dw) / 2);
+          const dy = Math.round((targetH - dh) / 2);
+          if (format === 'image/jpeg') {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, targetW, targetH);
+          }
+          if (flipH || flipV) {
+            ctx.translate(flipH ? targetW : 0, flipV ? targetH : 0);
+            ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+          }
+          ctx.drawImage(img, cropX, cropY, cropW, cropH, dx, dy, dw, dh);
+        } else if (resizeMode === 'fill') {
+          const scale = Math.max(targetW / cropW, targetH / cropH);
+          const sw = targetW / scale;
+          const sh = targetH / scale;
+          const sx = Math.round(cropX + (cropW - sw) / 2);
+          const sy = Math.round(cropY + (cropH - sh) / 2);
+          if (flipH || flipV) {
+            ctx.translate(flipH ? targetW : 0, flipV ? targetH : 0);
+            ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+          }
+          ctx.drawImage(img, sx, sy, Math.round(sw), Math.round(sh), 0, 0, targetW, targetH);
+        } else {
+          // stretch
+          if (flipH || flipV) {
+            ctx.translate(flipH ? targetW : 0, flipV ? targetH : 0);
+            ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+          }
+          ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, targetW, targetH);
+        }
+      }
 
       function clampCrop() {
         activeCrop.x = Math.max(0, Math.min(activeCrop.x, imgNatW - 1));
@@ -1716,21 +1840,25 @@
               canvas.width = Math.round(crop.w);
               canvas.height = Math.round(crop.h);
               const ctx = canvas.getContext('2d');
-              if (flipH || flipV) {
-                ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
-                ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+              if (resizeEnabled && (resizeW || resizeH)) {
+                applyResizeToCanvas(canvas, ctx, img, crop, format);
+              } else {
+                if (flipH || flipV) {
+                  ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
+                  ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+                }
+                ctx.drawImage(
+                  img,
+                  Math.round(crop.x),
+                  Math.round(crop.y),
+                  Math.round(crop.w),
+                  Math.round(crop.h),
+                  0,
+                  0,
+                  Math.round(crop.w),
+                  Math.round(crop.h)
+                );
               }
-              ctx.drawImage(
-                img,
-                Math.round(crop.x),
-                Math.round(crop.y),
-                Math.round(crop.w),
-                Math.round(crop.h),
-                0,
-                0,
-                Math.round(crop.w),
-                Math.round(crop.h)
-              );
               URL.revokeObjectURL(url);
               canvas.toBlob(resolve, format, exportQuality);
             };
@@ -1739,10 +1867,12 @@
 
           const nameParts = f.file.name.split('.');
           const baseName = nameParts.slice(0, -1).join('.');
+          const outW = resizeEnabled && resizeW ? resizeW : Math.round(crop.w);
+          const outH = resizeEnabled && resizeH ? resizeH : Math.round(crop.h);
           const resolvedBase = resolveTemplate(filenameTemplate, {
             name: baseName,
-            w: crop.w,
-            h: crop.h,
+            w: outW,
+            h: outH,
             idx: i + 1,
           });
           const filename = resolvedBase + '.' + ext;
@@ -1791,21 +1921,25 @@
             canvas.width = Math.round(crop.w);
             canvas.height = Math.round(crop.h);
             const ctx = canvas.getContext('2d');
-            if (flipH || flipV) {
-              ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
-              ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+            if (resizeEnabled && (resizeW || resizeH)) {
+              applyResizeToCanvas(canvas, ctx, img, crop, format);
+            } else {
+              if (flipH || flipV) {
+                ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
+                ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+              }
+              ctx.drawImage(
+                img,
+                Math.round(crop.x),
+                Math.round(crop.y),
+                Math.round(crop.w),
+                Math.round(crop.h),
+                0,
+                0,
+                Math.round(crop.w),
+                Math.round(crop.h)
+              );
             }
-            ctx.drawImage(
-              img,
-              Math.round(crop.x),
-              Math.round(crop.y),
-              Math.round(crop.w),
-              Math.round(crop.h),
-              0,
-              0,
-              Math.round(crop.w),
-              Math.round(crop.h)
-            );
             URL.revokeObjectURL(url);
             canvas.toBlob(resolve, format, exportQuality);
           };
@@ -1814,10 +1948,12 @@
 
         const nameParts = f.file.name.split('.');
         const baseName = nameParts.slice(0, -1).join('.');
+        const outW = resizeEnabled && resizeW ? resizeW : Math.round(crop.w);
+        const outH = resizeEnabled && resizeH ? resizeH : Math.round(crop.h);
         const resolvedBase = resolveTemplate(filenameTemplate, {
           name: baseName,
-          w: crop.w,
-          h: crop.h,
+          w: outW,
+          h: outH,
           idx: activeIndex + 1,
         });
         const filename = resolvedBase + '.' + ext;
@@ -1966,6 +2102,10 @@
               ratioH: parseFloat(ratioH.value) || 9,
               zoom,
               sortOrder,
+              resizeEnabled,
+              resizeW,
+              resizeH,
+              resizeMode,
             })
           );
         } catch (_) {}
@@ -1999,6 +2139,23 @@
           if (s.sortOrder) {
             sortOrder = s.sortOrder;
             sortSelect.value = s.sortOrder;
+          }
+          if (s.resizeEnabled != null) {
+            resizeEnabled = s.resizeEnabled;
+            resizeEnabledChk.checked = s.resizeEnabled;
+            resizeInputsDiv.style.display = s.resizeEnabled ? 'block' : 'none';
+          }
+          if (s.resizeW) {
+            resizeW = s.resizeW;
+            resizeWInput.value = s.resizeW;
+          }
+          if (s.resizeH) {
+            resizeH = s.resizeH;
+            resizeHInput.value = s.resizeH;
+          }
+          if (s.resizeMode) {
+            resizeMode = s.resizeMode;
+            resizeModeSelect.value = s.resizeMode;
           }
           // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}
@@ -2214,6 +2371,24 @@
       sortSelect.addEventListener('change', (e) => {
         sortOrder = e.target.value;
         applySortOrder();
+        saveSettings();
+      });
+
+      resizeEnabledChk.addEventListener('change', () => {
+        resizeEnabled = resizeEnabledChk.checked;
+        resizeInputsDiv.style.display = resizeEnabled ? 'block' : 'none';
+        saveSettings();
+      });
+      resizeWInput.addEventListener('input', () => {
+        resizeW = parseInt(resizeWInput.value) || 0;
+        saveSettings();
+      });
+      resizeHInput.addEventListener('input', () => {
+        resizeH = parseInt(resizeHInput.value) || 0;
+        saveSettings();
+      });
+      resizeModeSelect.addEventListener('change', () => {
+        resizeMode = resizeModeSelect.value;
         saveSettings();
       });
 

@@ -1775,7 +1775,7 @@
 
       cropModeBtn.addEventListener('click', () => {
         cropMode = cropMode === 'px' ? 'pct' : 'px';
-        cropModeBtn.textContent = cropMode;
+        cropModeBtn.textContent = cropMode === 'pct' ? '%' : 'px';
         cropInputEls.forEach((el) => (el.step = cropMode === 'pct' ? '0.1' : '1'));
         updateInputs();
       });

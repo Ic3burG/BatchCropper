@@ -732,6 +732,18 @@
           >
             Clear file override
           </button>
+          <button
+            class="btn btn-ghost btn-full"
+            id="detect-faces-btn"
+            style="margin-top:4px;display:none"
+            title="Auto-suggest a crop region based on detected faces"
+          >
+            ◉ Detect Faces
+          </button>
+          <div
+            id="detect-faces-status"
+            style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:4px;display:none"
+          ></div>
         </div>
 
         <div class="sidebar-section">
@@ -884,6 +896,12 @@
       const qualityVal = document.getElementById('quality-val');
       const filenameTemplateInput = document.getElementById('filename-template');
       const downloadActiveBtn = document.getElementById('download-active-btn');
+      const detectFacesBtn = document.getElementById('detect-faces-btn');
+      const detectFacesStatus = document.getElementById('detect-faces-status');
+
+      if ('FaceDetector' in window) {
+        detectFacesBtn.style.display = 'block';
+      }
 
       // Inputs
       const inX = document.getElementById('crop-x');
@@ -1387,6 +1405,56 @@
         updateInputs();
         updateCropBoxVisual();
         renderFileList();
+      });
+
+      detectFacesBtn.addEventListener('click', async () => {
+        if (!imgNatW || !files[activeIndex]) return;
+
+        detectFacesBtn.disabled = true;
+        detectFacesStatus.style.display = 'block';
+        detectFacesStatus.textContent = 'Detecting…';
+
+        try {
+          const detector = new FaceDetector({ fastMode: false });
+          const faces = await detector.detect(previewImg);
+
+          if (!faces.length) {
+            detectFacesStatus.textContent = 'No faces detected.';
+            detectFacesBtn.disabled = false;
+            return;
+          }
+
+          // Compute union bounding box of all detected faces.
+          // FaceDetector returns coords in the element's display space, so divide by zoom.
+          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          for (const face of faces) {
+            const b = face.boundingBox;
+            minX = Math.min(minX, b.left / zoom);
+            minY = Math.min(minY, b.top / zoom);
+            maxX = Math.max(maxX, (b.left + b.width) / zoom);
+            maxY = Math.max(maxY, (b.top + b.height) / zoom);
+          }
+
+          // Add 10% padding around the detected region
+          const padX = (maxX - minX) * 0.1;
+          const padY = (maxY - minY) * 0.1;
+          activeCrop.x = Math.max(0, minX - padX);
+          activeCrop.y = Math.max(0, minY - padY);
+          activeCrop.w = Math.min(imgNatW - activeCrop.x, (maxX - minX) + padX * 2);
+          activeCrop.h = Math.min(imgNatH - activeCrop.y, (maxY - minY) + padY * 2);
+
+          clampCrop();
+          updateInputs();
+          updateCropBoxVisual();
+          pushHistory();
+
+          const count = faces.length;
+          detectFacesStatus.textContent = `${count} face${count > 1 ? 's' : ''} detected.`;
+        } catch (err) {
+          detectFacesStatus.textContent = 'Detection failed: ' + err.message;
+        }
+
+        detectFacesBtn.disabled = false;
       });
 
       document.getElementById('reset-crop').addEventListener('click', () => {

@@ -847,13 +847,23 @@
                 placeholder="Name current crop…"
                 style="flex: 1; font-size: 11px"
               />
-              <button class="btn btn-ghost" id="save-preset-btn" style="font-size: 11px; white-space: nowrap">
+              <button
+                class="btn btn-ghost"
+                id="save-preset-btn"
+                style="font-size: 11px; white-space: nowrap"
+              >
                 Save
               </button>
             </div>
             <div
               id="user-presets"
-              style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto"
+              style="
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+                max-height: 120px;
+                overflow-y: auto;
+              "
             ></div>
           </div>
         </div>
@@ -946,7 +956,13 @@
 
         <div
           class="sidebar-section"
-          style="flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px"
+          style="
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+          "
         >
           <h2 style="margin-bottom: 0; flex-shrink: 0">
             Files
@@ -1139,7 +1155,13 @@
 
       function loadFiles(fileArr) {
         if (!fileArr.length) return;
-        files = fileArr.map((f) => ({ file: f, done: false, crop: null, info: null }));
+        files = fileArr.map((f, i) => ({
+          file: f,
+          done: false,
+          crop: null,
+          info: null,
+          originalIndex: i,
+        }));
         activeIndex = 0;
         cropHistory = [];
         historyIndex = -1;
@@ -2124,7 +2146,13 @@
         const nameInput = document.getElementById('preset-name-input');
         const name = nameInput.value.trim();
         if (!name || !activeCrop.w || !activeCrop.h) return;
-        userPresets.push({ name, x: activeCrop.x, y: activeCrop.y, w: activeCrop.w, h: activeCrop.h });
+        userPresets.push({
+          name,
+          x: activeCrop.x,
+          y: activeCrop.y,
+          w: activeCrop.w,
+          h: activeCrop.h,
+        });
         saveUserPresetsToStorage();
         renderUserPresets();
         nameInput.value = '';
@@ -2144,16 +2172,20 @@
 
       // ── Sort ─────────────────────────────────────────────────
       function applySortOrder() {
-        if (sortOrder === 'none' || !files.length) return;
+        if (!files.length) return;
         const activeFile = files[activeIndex];
-        files.sort((a, b) => {
-          if (sortOrder === 'name-asc') return a.file.name.localeCompare(b.file.name);
-          if (sortOrder === 'name-desc') return b.file.name.localeCompare(a.file.name);
-          if (sortOrder === 'size-asc') return a.file.size - b.file.size;
-          if (sortOrder === 'size-desc') return b.file.size - a.file.size;
-          if (sortOrder === 'status') return (a.done ? 1 : 0) - (b.done ? 1 : 0);
-          return 0;
-        });
+        if (sortOrder === 'none') {
+          files.sort((a, b) => a.originalIndex - b.originalIndex);
+        } else {
+          files.sort((a, b) => {
+            if (sortOrder === 'name-asc') return a.file.name.localeCompare(b.file.name);
+            if (sortOrder === 'name-desc') return b.file.name.localeCompare(a.file.name);
+            if (sortOrder === 'size-asc') return a.file.size - b.file.size;
+            if (sortOrder === 'size-desc') return b.file.size - a.file.size;
+            if (sortOrder === 'status') return (a.done ? 1 : 0) - (b.done ? 1 : 0);
+            return 0;
+          });
+        }
         activeIndex = files.indexOf(activeFile);
         renderFileList();
       }

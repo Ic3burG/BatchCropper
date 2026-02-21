@@ -624,7 +624,10 @@
 
       <div class="sidebar">
         <div class="sidebar-section">
-          <h2>Crop Region (px)</h2>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <h2 style="margin-bottom:0">Crop</h2>
+            <button class="btn btn-ghost" id="crop-mode-btn" style="padding:2px 8px;font-size:10px;font-family:var(--mono)">px</button>
+          </div>
           <div class="input-grid">
             <div class="input-group">
               <label>X</label>
@@ -857,6 +860,7 @@
       let swipeStartY = 0;
       let flipH = false;
       let flipV = false;
+      let cropMode = 'px'; // 'px' | 'pct'
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
@@ -1151,10 +1155,17 @@
 
       // Input fields -> crop rect
       function inputsToCrop() {
-        activeCrop.x = parseInt(inX.value) || 0;
-        activeCrop.y = parseInt(inY.value) || 0;
-        activeCrop.w = parseInt(inW.value) || 0;
-        activeCrop.h = parseInt(inH.value) || 0;
+        if (cropMode === 'pct' && imgNatW && imgNatH) {
+          activeCrop.x = ((parseFloat(inX.value) || 0) / 100) * imgNatW;
+          activeCrop.y = ((parseFloat(inY.value) || 0) / 100) * imgNatH;
+          activeCrop.w = ((parseFloat(inW.value) || 0) / 100) * imgNatW;
+          activeCrop.h = ((parseFloat(inH.value) || 0) / 100) * imgNatH;
+        } else {
+          activeCrop.x = parseInt(inX.value) || 0;
+          activeCrop.y = parseInt(inY.value) || 0;
+          activeCrop.w = parseInt(inW.value) || 0;
+          activeCrop.h = parseInt(inH.value) || 0;
+        }
         clampCrop();
         updateCropBoxVisual();
       }
@@ -1185,10 +1196,17 @@
       }
 
       function updateInputs() {
-        inX.value = Math.round(activeCrop.x);
-        inY.value = Math.round(activeCrop.y);
-        inW.value = Math.round(activeCrop.w);
-        inH.value = Math.round(activeCrop.h);
+        if (cropMode === 'pct' && imgNatW && imgNatH) {
+          inX.value = ((activeCrop.x / imgNatW) * 100).toFixed(1);
+          inY.value = ((activeCrop.y / imgNatH) * 100).toFixed(1);
+          inW.value = ((activeCrop.w / imgNatW) * 100).toFixed(1);
+          inH.value = ((activeCrop.h / imgNatH) * 100).toFixed(1);
+        } else {
+          inX.value = Math.round(activeCrop.x);
+          inY.value = Math.round(activeCrop.y);
+          inW.value = Math.round(activeCrop.w);
+          inH.value = Math.round(activeCrop.h);
+        }
       }
 
       function updateCropBoxVisual() {
@@ -1750,6 +1768,16 @@
         flipVBtn.style.color = flipV ? 'var(--accent)' : '';
         flipVBtn.style.borderColor = flipV ? 'var(--accent)' : '';
         applyFlipPreview();
+      });
+
+      const cropModeBtn = document.getElementById('crop-mode-btn');
+      const cropInputEls = [inX, inY, inW, inH];
+
+      cropModeBtn.addEventListener('click', () => {
+        cropMode = cropMode === 'px' ? 'pct' : 'px';
+        cropModeBtn.textContent = cropMode;
+        cropInputEls.forEach((el) => (el.step = cropMode === 'pct' ? '0.1' : '1'));
+        updateInputs();
       });
 
       loadSettings();

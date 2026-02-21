@@ -1704,6 +1704,7 @@
           if (s.ratioH) ratioH.value = s.ratioH;
           if (s.ratioSelect) updateAspectRatio();
           if (s.zoom != null) zoom = Math.min(8, Math.max(0.05, s.zoom));
+          // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}
       }
 

@@ -60,12 +60,12 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 - [x] **Crop by Percentage**: Express crop dimensions as `%` of image size instead of pixels — useful when images vary in resolution but you want the "middle 80%"
 - [x] **Mirror/Flip on Export**: Apply horizontal or vertical flip at export time via canvas compositing; common for social media variants
 
-### v1.5 — Workflow
+### v1.5 — Workflow (Complete)
 
-- **Named Crop Presets**: Save and recall named crop regions (e.g., "Instagram Square", "Twitter Header")
-- **Sort Sidebar**: Sort the file list by filename, file size, or export status
-- **Clear Completed Files**: Remove already-exported files from the list without restarting the session
-- **Batch Resize on Export**: Optionally scale the output to a fixed resolution after cropping
+- [x] **Named Crop Presets**: Save and recall named crop regions (e.g., "Instagram Square", "Twitter Header")
+- [x] **Sort Sidebar**: Sort the file list by filename, file size, or export status
+- [x] **Clear Completed Files**: Remove already-exported files from the list without restarting the session
+- [x] **Batch Resize on Export**: Optionally scale the output to a fixed resolution after cropping
 
 ### v1.6 — Export Enhancements
 

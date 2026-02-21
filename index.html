@@ -1978,6 +1978,8 @@
         a.href = URL.createObjectURL(blob);
         a.download = filename;
         a.click();
+        files[activeIndex].done = true;
+        renderFileList();
         setTimeout(() => URL.revokeObjectURL(a.href), 5000);
         statusText.textContent = `Downloaded: ${filename}`;
       }

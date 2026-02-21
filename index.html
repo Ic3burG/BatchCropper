@@ -572,6 +572,58 @@
       input[type='range']:active::-moz-range-thumb {
         background: #ffd060;
       }
+      .preset-chip {
+        font-family: var(--mono);
+        font-size: 10px;
+        padding: 3px 7px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        border-radius: 2px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .preset-chip:hover {
+        border-color: var(--accent);
+        color: var(--text);
+      }
+      .user-preset-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .user-preset-row button.apply {
+        flex: 1;
+        text-align: left;
+        font-family: var(--mono);
+        font-size: 11px;
+        padding: 4px 8px;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-radius: 2px;
+        cursor: pointer;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .user-preset-row button.apply:hover {
+        border-color: var(--accent);
+      }
+      .user-preset-row button.del {
+        flex-shrink: 0;
+        padding: 4px 7px;
+        font-size: 12px;
+        background: none;
+        border: 1px solid var(--border);
+        color: var(--text-dim);
+        border-radius: 2px;
+        cursor: pointer;
+      }
+      .user-preset-row button.del:hover {
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
     </style>
   </head>
   <body>
@@ -765,6 +817,47 @@
           ></div>
         </div>
 
+        <div class="sidebar-section" id="presets-section" style="flex-shrink: 0">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 10px;
+            "
+          >
+            <h2 style="margin-bottom: 0">Presets</h2>
+            <button
+              class="btn btn-ghost"
+              id="presets-toggle"
+              style="padding: 2px 8px; font-size: 10px; font-family: var(--mono)"
+            >
+              ▾
+            </button>
+          </div>
+          <div id="presets-body">
+            <div
+              id="builtin-presets"
+              style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px"
+            ></div>
+            <div style="display: flex; gap: 6px; margin-bottom: 6px">
+              <input
+                type="text"
+                id="preset-name-input"
+                placeholder="Name current crop…"
+                style="flex: 1; font-size: 11px"
+              />
+              <button class="btn btn-ghost" id="save-preset-btn" style="font-size: 11px; white-space: nowrap">
+                Save
+              </button>
+            </div>
+            <div
+              id="user-presets"
+              style="display: flex; flex-direction: column; gap: 4px; max-height: 120px; overflow-y: auto"
+            ></div>
+          </div>
+        </div>
+
         <div class="sidebar-section">
           <h2>Export</h2>
           <div style="display: flex; gap: 6px; margin-bottom: 10px">
@@ -906,6 +999,7 @@
       let flipH = false;
       let flipV = false;
       let cropMode = 'px'; // 'px' | 'pct'
+      let userPresets = []; // [{name, x, y, w, h}, ...]
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
@@ -1883,6 +1977,133 @@
         cropInputEls.forEach((el) => (el.step = cropMode === 'pct' ? '0.1' : '1'));
         updateInputs();
       });
+
+      // ── Presets ──────────────────────────────────────────────
+      const PRESETS_KEY = 'batchcrop_presets';
+
+      const BUILTIN_PRESETS = [
+        { name: 'Square 1:1', ratio: 1 },
+        { name: 'Portrait 4:5', ratio: 4 / 5 },
+        { name: 'Story 9:16', ratio: 9 / 16 },
+        { name: 'Landscape 16:9', ratio: 16 / 9 },
+        { name: 'Twitter Header', ratio: 3 / 1 },
+        { name: 'Classic 4:3', ratio: 4 / 3 },
+      ];
+
+      function loadUserPresets() {
+        try {
+          const raw = localStorage.getItem(PRESETS_KEY);
+          userPresets = raw ? JSON.parse(raw) : [];
+        } catch (_) {
+          userPresets = [];
+        }
+      }
+
+      function saveUserPresetsToStorage() {
+        try {
+          localStorage.setItem(PRESETS_KEY, JSON.stringify(userPresets));
+        } catch (_) {}
+      }
+
+      function applyBuiltInPreset(ratio) {
+        if (!imgNatW || !imgNatH) return;
+        const imageRatio = imgNatW / imgNatH;
+        let w, h;
+        if (ratio >= imageRatio) {
+          w = imgNatW;
+          h = w / ratio;
+        } else {
+          h = imgNatH;
+          w = h * ratio;
+        }
+        activeCrop.x = (imgNatW - w) / 2;
+        activeCrop.y = (imgNatH - h) / 2;
+        activeCrop.w = w;
+        activeCrop.h = h;
+        clampCrop();
+        updateInputs();
+        updateCropBoxVisual();
+        pushHistory();
+      }
+
+      function applyUserPreset(preset) {
+        if (!imgNatW) return;
+        Object.assign(activeCrop, { x: preset.x, y: preset.y, w: preset.w, h: preset.h });
+        clampCrop();
+        updateInputs();
+        updateCropBoxVisual();
+        pushHistory();
+      }
+
+      function renderUserPresets() {
+        const container = document.getElementById('user-presets');
+        container.replaceChildren();
+        userPresets.forEach((preset, i) => {
+          const row = document.createElement('div');
+          row.className = 'user-preset-row';
+
+          const applyBtn = document.createElement('button');
+          applyBtn.className = 'apply';
+          applyBtn.textContent = preset.name;
+          applyBtn.title =
+            Math.round(preset.w) +
+            ' x ' +
+            Math.round(preset.h) +
+            ' at (' +
+            Math.round(preset.x) +
+            ', ' +
+            Math.round(preset.y) +
+            ')';
+          applyBtn.addEventListener('click', () => applyUserPreset(preset));
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'del';
+          delBtn.textContent = '\xd7';
+          delBtn.title = 'Delete preset';
+          delBtn.addEventListener('click', () => {
+            userPresets.splice(i, 1);
+            saveUserPresetsToStorage();
+            renderUserPresets();
+          });
+
+          row.appendChild(applyBtn);
+          row.appendChild(delBtn);
+          container.appendChild(row);
+        });
+      }
+
+      // Render built-in preset chips
+      const builtinContainer = document.getElementById('builtin-presets');
+      BUILTIN_PRESETS.forEach((preset) => {
+        const chip = document.createElement('button');
+        chip.className = 'preset-chip';
+        chip.textContent = preset.name;
+        chip.addEventListener('click', () => applyBuiltInPreset(preset.ratio));
+        builtinContainer.appendChild(chip);
+      });
+
+      // Save current crop as named preset
+      document.getElementById('save-preset-btn').addEventListener('click', () => {
+        const nameInput = document.getElementById('preset-name-input');
+        const name = nameInput.value.trim();
+        if (!name || !activeCrop.w || !activeCrop.h) return;
+        userPresets.push({ name, x: activeCrop.x, y: activeCrop.y, w: activeCrop.w, h: activeCrop.h });
+        saveUserPresetsToStorage();
+        renderUserPresets();
+        nameInput.value = '';
+      });
+
+      // Collapse/expand presets body
+      document.getElementById('presets-toggle').addEventListener('click', () => {
+        const body = document.getElementById('presets-body');
+        const btn = document.getElementById('presets-toggle');
+        const collapsed = body.style.display === 'none';
+        body.style.display = collapsed ? 'block' : 'none';
+        btn.textContent = collapsed ? '\u25be' : '\u25b8';
+      });
+
+      loadUserPresets();
+      renderUserPresets();
 
       loadSettings();
     </script>

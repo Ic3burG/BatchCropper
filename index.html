@@ -624,9 +624,22 @@
 
       <div class="sidebar">
         <div class="sidebar-section">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-            <h2 style="margin-bottom:0">Crop</h2>
-            <button class="btn btn-ghost" id="crop-mode-btn" style="padding:2px 8px;font-size:10px;font-family:var(--mono)">px</button>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 12px;
+            "
+          >
+            <h2 style="margin-bottom: 0">Crop</h2>
+            <button
+              class="btn btn-ghost"
+              id="crop-mode-btn"
+              style="padding: 2px 8px; font-size: 10px; font-family: var(--mono)"
+            >
+              px
+            </button>
           </div>
           <div class="input-grid">
             <div class="input-group">
@@ -735,22 +748,42 @@
           <button
             class="btn btn-ghost btn-full"
             id="detect-faces-btn"
-            style="margin-top:4px;display:none"
+            style="margin-top: 4px; display: none"
             title="Auto-suggest a crop region based on detected faces"
           >
             ◉ Detect Faces
           </button>
           <div
             id="detect-faces-status"
-            style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:4px;display:none"
+            style="
+              font-family: var(--mono);
+              font-size: 10px;
+              color: var(--text-dim);
+              margin-top: 4px;
+              display: none;
+            "
           ></div>
         </div>
 
         <div class="sidebar-section">
           <h2>Export</h2>
-          <div style="display:flex;gap:6px;margin-bottom:10px;">
-            <button class="btn btn-ghost" id="flip-h-btn" style="flex:1" title="Flip horizontal on export">⇄ Flip H</button>
-            <button class="btn btn-ghost" id="flip-v-btn" style="flex:1" title="Flip vertical on export">⇅ Flip V</button>
+          <div style="display: flex; gap: 6px; margin-bottom: 10px">
+            <button
+              class="btn btn-ghost"
+              id="flip-h-btn"
+              style="flex: 1"
+              title="Flip horizontal on export"
+            >
+              ⇄ Flip H
+            </button>
+            <button
+              class="btn btn-ghost"
+              id="flip-v-btn"
+              style="flex: 1"
+              title="Flip vertical on export"
+            >
+              ⇅ Flip V
+            </button>
           </div>
           <div style="margin-bottom: 8px">
             <div class="input-group">
@@ -1426,7 +1459,10 @@
 
           // Compute union bounding box of all detected faces.
           // FaceDetector returns coords in the element's display space, so divide by zoom.
-          let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+          let minX = Infinity,
+            minY = Infinity,
+            maxX = -Infinity,
+            maxY = -Infinity;
           for (const face of faces) {
             const b = face.boundingBox;
             minX = Math.min(minX, b.left / zoom);
@@ -1440,8 +1476,8 @@
           const padY = (maxY - minY) * 0.1;
           activeCrop.x = Math.max(0, minX - padX);
           activeCrop.y = Math.max(0, minY - padY);
-          activeCrop.w = Math.min(imgNatW - activeCrop.x, (maxX - minX) + padX * 2);
-          activeCrop.h = Math.min(imgNatH - activeCrop.y, (maxY - minY) + padY * 2);
+          activeCrop.w = Math.min(imgNatW - activeCrop.x, maxX - minX + padX * 2);
+          activeCrop.h = Math.min(imgNatH - activeCrop.y, maxY - minY + padY * 2);
 
           clampCrop();
           updateInputs();

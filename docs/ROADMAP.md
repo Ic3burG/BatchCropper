@@ -54,11 +54,11 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 ## 🔮 Future Ideas
 
-### v1.4 — Crop Intelligence
+### v1.4 — Crop Intelligence (Complete)
 
-- **Smart Crop Suggestions**: Use the browser's `ShapeDetection` API (no server, no library) to detect faces/subjects and auto-propose a centered crop region
-- **Crop by Percentage**: Express crop dimensions as `%` of image size instead of pixels — useful when images vary in resolution but you want the "middle 80%"
-- **Mirror/Flip on Export**: Apply horizontal or vertical flip at export time via canvas compositing; common for social media variants
+- [x] **Smart Crop Suggestions**: Use the browser's `ShapeDetection` API (no server, no library) to detect faces/subjects and auto-propose a centered crop region
+- [x] **Crop by Percentage**: Express crop dimensions as `%` of image size instead of pixels — useful when images vary in resolution but you want the "middle 80%"
+- [x] **Mirror/Flip on Export**: Apply horizontal or vertical flip at export time via canvas compositing; common for social media variants
 
 ### v1.5 — Workflow
 

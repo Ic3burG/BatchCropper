@@ -67,6 +67,10 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 - [x] **Clear Completed Files**: Remove already-exported files from the list without restarting the session
 - [x] **Batch Resize on Export**: Optionally scale the output to a fixed resolution after cropping
 
+### v1.5.1 — Collapsible Sidebar (Complete)
+
+- [x] **Collapsible Sections**: Crop, Presets, and Export sections collapse/expand via a shared helper; state persists across reload
+
 ### v1.6 — Export Enhancements
 
 - **AVIF Format Support**: Add `image/avif` as an export format — natively supported by Canvas API in Chrome/Firefox, no new dependency needed

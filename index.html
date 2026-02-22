@@ -685,136 +685,150 @@
             "
           >
             <h2 style="margin-bottom: 0">Crop</h2>
-            <button
-              class="btn btn-ghost"
-              id="crop-mode-btn"
-              style="padding: 2px 8px; font-size: 10px; font-family: var(--mono)"
-            >
-              px
-            </button>
-          </div>
-          <div class="input-grid">
-            <div class="input-group">
-              <label>X</label>
-              <input type="number" id="crop-x" value="0" min="0" />
-            </div>
-            <div class="input-group">
-              <label>Y</label>
-              <input type="number" id="crop-y" value="0" min="0" />
-            </div>
-            <div class="input-group">
-              <label>Width</label>
-              <input type="number" id="crop-w" value="0" min="1" />
-            </div>
-            <div class="input-group">
-              <label>Height</label>
-              <input type="number" id="crop-h" value="0" min="1" />
+            <div style="display: flex; gap: 4px; align-items: center">
+              <button
+                class="btn btn-ghost"
+                id="crop-mode-btn"
+                style="padding: 2px 8px; font-size: 10px; font-family: var(--mono)"
+              >
+                px
+              </button>
+              <button
+                class="btn btn-ghost"
+                id="crop-collapse-btn"
+                style="padding: 2px 8px; font-size: 10px; font-family: var(--mono)"
+              >
+                ▾
+              </button>
             </div>
           </div>
-          <div style="margin-top: 8px">
-            <div class="input-group">
-              <label>Ratio</label>
-              <div style="display: flex; gap: 6px; align-items: center">
-                <select
-                  id="ratio-select"
-                  style="
-                    flex: 1;
-                    background: var(--surface2);
-                    border: 1px solid var(--border);
-                    color: var(--text);
-                    font-family: var(--mono);
-                    font-size: 12px;
-                    padding: 6px 8px;
-                    outline: none;
-                    border-radius: 2px;
-                  "
-                >
-                  <option value="free">Free</option>
-                  <option value="1">1:1</option>
-                  <option value="1.3333">4:3</option>
-                  <option value="1.5">3:2</option>
-                  <option value="1.7778">16:9</option>
-                  <option value="custom">Custom</option>
-                </select>
-                <button
-                  id="invert-ratio"
-                  class="btn btn-ghost"
-                  style="padding: 6px; flex-shrink: 0"
-                  title="Invert Ratio"
-                >
-                  ⇅
-                </button>
-                <span id="custom-ratio-inputs" style="display: none; gap: 4px; align-items: center">
-                  <input
-                    type="number"
-                    id="ratio-w"
-                    value="16"
-                    min="1"
-                    style="
-                      width: 40px;
-                      background: var(--surface2);
-                      border: 1px solid var(--border);
-                      color: var(--text);
-                      font-family: var(--mono);
-                      font-size: 12px;
-                      padding: 4px 6px;
-                      outline: none;
-                      border-radius: 2px;
-                    "
-                  />
-                  <span style="color: var(--text-dim); font-family: var(--mono); font-size: 12px">
-                    :
-                  </span>
-                  <input
-                    type="number"
-                    id="ratio-h"
-                    value="9"
-                    min="1"
-                    style="
-                      width: 40px;
-                      background: var(--surface2);
-                      border: 1px solid var(--border);
-                      color: var(--text);
-                      font-family: var(--mono);
-                      font-size: 12px;
-                      padding: 4px 6px;
-                      outline: none;
-                      border-radius: 2px;
-                    "
-                  />
-                </span>
+          <div id="crop-body">
+            <div class="input-grid">
+              <div class="input-group">
+                <label>X</label>
+                <input type="number" id="crop-x" value="0" min="0" />
+              </div>
+              <div class="input-group">
+                <label>Y</label>
+                <input type="number" id="crop-y" value="0" min="0" />
+              </div>
+              <div class="input-group">
+                <label>Width</label>
+                <input type="number" id="crop-w" value="0" min="1" />
+              </div>
+              <div class="input-group">
+                <label>Height</label>
+                <input type="number" id="crop-h" value="0" min="1" />
               </div>
             </div>
+            <div style="margin-top: 8px">
+              <div class="input-group">
+                <label>Ratio</label>
+                <div style="display: flex; gap: 6px; align-items: center">
+                  <select
+                    id="ratio-select"
+                    style="
+                      flex: 1;
+                      background: var(--surface2);
+                      border: 1px solid var(--border);
+                      color: var(--text);
+                      font-family: var(--mono);
+                      font-size: 12px;
+                      padding: 6px 8px;
+                      outline: none;
+                      border-radius: 2px;
+                    "
+                  >
+                    <option value="free">Free</option>
+                    <option value="1">1:1</option>
+                    <option value="1.3333">4:3</option>
+                    <option value="1.5">3:2</option>
+                    <option value="1.7778">16:9</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                  <button
+                    id="invert-ratio"
+                    class="btn btn-ghost"
+                    style="padding: 6px; flex-shrink: 0"
+                    title="Invert Ratio"
+                  >
+                    ⇅
+                  </button>
+                  <span
+                    id="custom-ratio-inputs"
+                    style="display: none; gap: 4px; align-items: center"
+                  >
+                    <input
+                      type="number"
+                      id="ratio-w"
+                      value="16"
+                      min="1"
+                      style="
+                        width: 40px;
+                        background: var(--surface2);
+                        border: 1px solid var(--border);
+                        color: var(--text);
+                        font-family: var(--mono);
+                        font-size: 12px;
+                        padding: 4px 6px;
+                        outline: none;
+                        border-radius: 2px;
+                      "
+                    />
+                    <span style="color: var(--text-dim); font-family: var(--mono); font-size: 12px">
+                      :
+                    </span>
+                    <input
+                      type="number"
+                      id="ratio-h"
+                      value="9"
+                      min="1"
+                      style="
+                        width: 40px;
+                        background: var(--surface2);
+                        border: 1px solid var(--border);
+                        color: var(--text);
+                        font-family: var(--mono);
+                        font-size: 12px;
+                        padding: 4px 6px;
+                        outline: none;
+                        border-radius: 2px;
+                      "
+                    />
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-full" id="reset-crop">Reset Selection</button>
+            <button class="btn btn-ghost btn-full" id="save-override" style="margin-top: 4px">
+              Save crop for this file
+            </button>
+            <button
+              class="btn btn-ghost btn-full"
+              id="clear-override"
+              style="margin-top: 4px; display: none"
+            >
+              Clear file override
+            </button>
+            <button
+              class="btn btn-ghost btn-full"
+              id="detect-faces-btn"
+              style="margin-top: 4px; display: none"
+              title="Auto-suggest a crop region based on detected faces"
+            >
+              ◉ Detect Faces
+            </button>
+            <div
+              id="detect-faces-status"
+              style="
+                font-family: var(--mono);
+                font-size: 10px;
+                color: var(--text-dim);
+                margin-top: 4px;
+                display: none;
+              "
+            ></div>
           </div>
-          <button class="btn btn-ghost btn-full" id="reset-crop">Reset Selection</button>
-          <button class="btn btn-ghost btn-full" id="save-override" style="margin-top: 4px">
-            Save crop for this file
-          </button>
-          <button
-            class="btn btn-ghost btn-full"
-            id="clear-override"
-            style="margin-top: 4px; display: none"
-          >
-            Clear file override
-          </button>
-          <button
-            class="btn btn-ghost btn-full"
-            id="detect-faces-btn"
-            style="margin-top: 4px; display: none"
-            title="Auto-suggest a crop region based on detected faces"
-          >
-            ◉ Detect Faces
-          </button>
-          <div
-            id="detect-faces-status"
-            style="
-              font-family: var(--mono);
-              font-size: 10px;
-              color: var(--text-dim);
-              margin-top: 4px;
-              display: none;
-            "
-          ></div>
         </div>
 
         <div class="sidebar-section" id="presets-section" style="flex-shrink: 0">
@@ -869,157 +883,179 @@
         </div>
 
         <div class="sidebar-section">
-          <h2>Export</h2>
-          <div style="display: flex; gap: 6px; margin-bottom: 10px">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 12px;
+            "
+          >
+            <h2 style="margin-bottom: 0">Export</h2>
             <button
               class="btn btn-ghost"
-              id="flip-h-btn"
-              style="flex: 1"
-              title="Flip horizontal on export"
+              id="export-collapse-btn"
+              style="padding: 2px 8px; font-size: 10px; font-family: var(--mono)"
             >
-              ⇄ Flip H
-            </button>
-            <button
-              class="btn btn-ghost"
-              id="flip-v-btn"
-              style="flex: 1"
-              title="Flip vertical on export"
-            >
-              ⇅ Flip V
+              ▾
             </button>
           </div>
-          <div style="margin-bottom: 8px">
-            <div class="input-group">
-              <label>Format</label>
-              <select
-                id="export-format"
-                style="
-                  width: 100%;
-                  background: var(--surface2);
-                  border: 1px solid var(--border);
-                  color: var(--text);
-                  font-family: var(--mono);
-                  font-size: 12px;
-                  padding: 6px 8px;
-                  outline: none;
-                  border-radius: 2px;
-                "
+          <div id="export-body">
+            <div style="display: flex; gap: 6px; margin-bottom: 10px">
+              <button
+                class="btn btn-ghost"
+                id="flip-h-btn"
+                style="flex: 1"
+                title="Flip horizontal on export"
               >
-                <option value="image/png">PNG</option>
-                <option value="image/jpeg">JPEG</option>
-                <option value="image/webp">WEBP</option>
-              </select>
+                ⇄ Flip H
+              </button>
+              <button
+                class="btn btn-ghost"
+                id="flip-v-btn"
+                style="flex: 1"
+                title="Flip vertical on export"
+              >
+                ⇅ Flip V
+              </button>
             </div>
-            <div class="input-group" id="quality-container" style="display: none; margin-top: 8px">
-              <label>
-                Quality (
-                <span id="quality-val">95</span>
-                %)
-              </label>
-              <input
-                type="range"
-                id="export-quality"
-                min="0.01"
-                max="1.00"
-                step="0.01"
-                value="0.95"
-                style="width: 100%"
-              />
+            <div style="margin-bottom: 8px">
+              <div class="input-group">
+                <label>Format</label>
+                <select
+                  id="export-format"
+                  style="
+                    width: 100%;
+                    background: var(--surface2);
+                    border: 1px solid var(--border);
+                    color: var(--text);
+                    font-family: var(--mono);
+                    font-size: 12px;
+                    padding: 6px 8px;
+                    outline: none;
+                    border-radius: 2px;
+                  "
+                >
+                  <option value="image/png">PNG</option>
+                  <option value="image/jpeg">JPEG</option>
+                  <option value="image/webp">WEBP</option>
+                </select>
+              </div>
+              <div
+                class="input-group"
+                id="quality-container"
+                style="display: none; margin-top: 8px"
+              >
+                <label>
+                  Quality (
+                  <span id="quality-val">95</span>
+                  %)
+                </label>
+                <input
+                  type="range"
+                  id="export-quality"
+                  min="0.01"
+                  max="1.00"
+                  step="0.01"
+                  value="0.95"
+                  style="width: 100%"
+                />
+              </div>
+              <div class="input-group" style="margin-top: 8px">
+                <label>Filename Template</label>
+                <input
+                  type="text"
+                  id="filename-template"
+                  value="{name}_cropped"
+                  placeholder="{name}_cropped"
+                />
+                <div class="template-legend">{name} {w} {h} {idx}</div>
+              </div>
             </div>
             <div class="input-group" style="margin-top: 8px">
-              <label>Filename Template</label>
-              <input
-                type="text"
-                id="filename-template"
-                value="{name}_cropped"
-                placeholder="{name}_cropped"
-              />
-              <div class="template-legend">{name} {w} {h} {idx}</div>
-            </div>
-          </div>
-          <div class="input-group" style="margin-top: 8px">
-            <label style="display: flex; align-items: center; justify-content: space-between">
-              Resize Output
-              <input type="checkbox" id="resize-enabled-chk" />
-            </label>
-            <div id="resize-inputs" style="display: none; margin-top: 6px">
-              <div style="display: flex; gap: 6px; margin-bottom: 6px">
-                <div style="flex: 1">
-                  <label
-                    style="
-                      font-family: var(--mono);
-                      font-size: 10px;
-                      color: var(--text-dim);
-                      display: block;
-                      margin-bottom: 4px;
-                    "
-                  >
-                    W (px)
-                  </label>
-                  <input
-                    type="number"
-                    id="resize-w"
-                    min="1"
-                    placeholder="auto"
-                    style="width: 100%"
-                  />
+              <label style="display: flex; align-items: center; justify-content: space-between">
+                Resize Output
+                <input type="checkbox" id="resize-enabled-chk" />
+              </label>
+              <div id="resize-inputs" style="display: none; margin-top: 6px">
+                <div style="display: flex; gap: 6px; margin-bottom: 6px">
+                  <div style="flex: 1">
+                    <label
+                      style="
+                        font-family: var(--mono);
+                        font-size: 10px;
+                        color: var(--text-dim);
+                        display: block;
+                        margin-bottom: 4px;
+                      "
+                    >
+                      W (px)
+                    </label>
+                    <input
+                      type="number"
+                      id="resize-w"
+                      min="1"
+                      placeholder="auto"
+                      style="width: 100%"
+                    />
+                  </div>
+                  <div style="flex: 1">
+                    <label
+                      style="
+                        font-family: var(--mono);
+                        font-size: 10px;
+                        color: var(--text-dim);
+                        display: block;
+                        margin-bottom: 4px;
+                      "
+                    >
+                      H (px)
+                    </label>
+                    <input
+                      type="number"
+                      id="resize-h"
+                      min="1"
+                      placeholder="auto"
+                      style="width: 100%"
+                    />
+                  </div>
                 </div>
-                <div style="flex: 1">
-                  <label
-                    style="
-                      font-family: var(--mono);
-                      font-size: 10px;
-                      color: var(--text-dim);
-                      display: block;
-                      margin-bottom: 4px;
-                    "
-                  >
-                    H (px)
-                  </label>
-                  <input
-                    type="number"
-                    id="resize-h"
-                    min="1"
-                    placeholder="auto"
-                    style="width: 100%"
-                  />
-                </div>
+                <select
+                  id="resize-mode-select"
+                  style="
+                    width: 100%;
+                    background: var(--surface2);
+                    border: 1px solid var(--border);
+                    color: var(--text);
+                    font-family: var(--mono);
+                    font-size: 12px;
+                    padding: 6px 8px;
+                    outline: none;
+                    border-radius: 2px;
+                  "
+                >
+                  <option value="fit">Fit (letterbox)</option>
+                  <option value="fill">Fill (clip edges)</option>
+                  <option value="stretch">Stretch</option>
+                </select>
               </div>
-              <select
-                id="resize-mode-select"
-                style="
-                  width: 100%;
-                  background: var(--surface2);
-                  border: 1px solid var(--border);
-                  color: var(--text);
-                  font-family: var(--mono);
-                  font-size: 12px;
-                  padding: 6px 8px;
-                  outline: none;
-                  border-radius: 2px;
-                "
-              >
-                <option value="fit">Fit (letterbox)</option>
-                <option value="fill">Fill (clip edges)</option>
-                <option value="stretch">Stretch</option>
-              </select>
             </div>
+            <button
+              class="btn btn-ghost btn-full"
+              id="download-active-btn"
+              disabled
+              style="margin-bottom: 8px"
+            >
+              ▼ Download Active File
+            </button>
+            <button class="btn btn-primary btn-full" id="export-btn" disabled>
+              ▼ Download All Cropped
+            </button>
+            <div class="progress-bar" id="progress-bar" style="display: none">
+              <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="status-text" id="status-text"></div>
           </div>
-          <button
-            class="btn btn-ghost btn-full"
-            id="download-active-btn"
-            disabled
-            style="margin-bottom: 8px"
-          >
-            ▼ Download Active File
-          </button>
-          <button class="btn btn-primary btn-full" id="export-btn" disabled>
-            ▼ Download All Cropped
-          </button>
-          <div class="progress-bar" id="progress-bar" style="display: none">
-            <div class="progress-fill" id="progress-fill"></div>
-          </div>
-          <div class="status-text" id="status-text"></div>
         </div>
 
         <div
@@ -1118,6 +1154,7 @@
       let resizeW = 0;
       let resizeH = 0;
       let resizeMode = 'fit'; // 'fit' | 'fill' | 'stretch'
+      const sectionCollapsed = { crop: false, presets: false, export: false };
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
@@ -1289,6 +1326,22 @@
 
       function updateClearDoneVisibility() {
         clearDoneBtn.style.display = files.some((f) => f.done) ? 'inline-block' : 'none';
+      }
+
+      function initCollapsible(toggleBtnId, bodyId, settingsKey) {
+        const btn = document.getElementById(toggleBtnId);
+        const body = document.getElementById(bodyId);
+        function apply(collapsed) {
+          body.style.display = collapsed ? 'none' : '';
+          btn.textContent = collapsed ? '\u25b8' : '\u25be';
+        }
+        btn.addEventListener('click', () => {
+          const collapsed = body.style.display !== 'none';
+          apply(collapsed);
+          sectionCollapsed[settingsKey] = collapsed;
+          saveSettings();
+        });
+        apply(sectionCollapsed[settingsKey]);
       }
 
       function clearFiles() {
@@ -2124,6 +2177,8 @@
               resizeW,
               resizeH,
               resizeMode,
+              cropCollapsed: sectionCollapsed.crop,
+              exportCollapsed: sectionCollapsed.export,
             })
           );
         } catch (_) {}
@@ -2175,6 +2230,8 @@
             resizeMode = s.resizeMode;
             resizeModeSelect.value = s.resizeMode;
           }
+          if (s.cropCollapsed != null) sectionCollapsed.crop = s.cropCollapsed;
+          if (s.exportCollapsed != null) sectionCollapsed.export = s.exportCollapsed;
           // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}
       }
@@ -2411,6 +2468,8 @@
       });
 
       loadSettings();
+      initCollapsible('crop-collapse-btn', 'crop-body', 'crop');
+      initCollapsible('export-collapse-btn', 'export-body', 'export');
     </script>
   </body>
 </html>

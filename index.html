@@ -2179,6 +2179,7 @@
               resizeMode,
               cropCollapsed: sectionCollapsed.crop,
               exportCollapsed: sectionCollapsed.export,
+              presetsCollapsed: sectionCollapsed.presets,
             })
           );
         } catch (_) {}
@@ -2232,6 +2233,7 @@
           }
           if (s.cropCollapsed != null) sectionCollapsed.crop = s.cropCollapsed;
           if (s.exportCollapsed != null) sectionCollapsed.export = s.exportCollapsed;
+          if (s.presetsCollapsed != null) sectionCollapsed.presets = s.presetsCollapsed;
           // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}
       }
@@ -2411,15 +2413,6 @@
         nameInput.value = '';
       });
 
-      // Collapse/expand presets body
-      document.getElementById('presets-toggle').addEventListener('click', () => {
-        const body = document.getElementById('presets-body');
-        const btn = document.getElementById('presets-toggle');
-        const collapsed = body.style.display === 'none';
-        body.style.display = collapsed ? 'block' : 'none';
-        btn.textContent = collapsed ? '\u25be' : '\u25b8';
-      });
-
       loadUserPresets();
       renderUserPresets();
 
@@ -2470,6 +2463,7 @@
       loadSettings();
       initCollapsible('crop-collapse-btn', 'crop-body', 'crop');
       initCollapsible('export-collapse-btn', 'export-body', 'export');
+      initCollapsible('presets-toggle', 'presets-body', 'presets');
     </script>
   </body>
 </html>

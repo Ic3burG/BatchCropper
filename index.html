@@ -1178,6 +1178,14 @@
             >
               ▼ Download Active File
             </button>
+            <button
+              class="btn btn-ghost btn-full"
+              id="copy-clipboard-btn"
+              disabled
+              style="margin-bottom: 8px"
+            >
+              ⧉ Copy to Clipboard
+            </button>
             <button class="btn btn-primary btn-full" id="export-btn" disabled>
               ▼ Download All Cropped
             </button>
@@ -1316,6 +1324,7 @@
       const qualityVal = document.getElementById('quality-val');
       const filenameTemplateInput = document.getElementById('filename-template');
       const downloadActiveBtn = document.getElementById('download-active-btn');
+      const copyClipboardBtn = document.getElementById('copy-clipboard-btn');
       const resizeEnabledChk = document.getElementById('resize-enabled-chk');
       const resizeInputsDiv = document.getElementById('resize-inputs');
       const resizeWInput = document.getElementById('resize-w');
@@ -1340,6 +1349,10 @@
 
       if ('FaceDetector' in window) {
         detectFacesBtn.style.display = 'block';
+      }
+
+      if (!navigator.clipboard?.write) {
+        copyClipboardBtn.style.display = 'none';
       }
 
       // Inputs
@@ -1509,6 +1522,7 @@
         dropZone.style.display = 'flex';
         exportBtn.disabled = true;
         downloadActiveBtn.disabled = true;
+        copyClipboardBtn.disabled = true;
         fileInput.value = ''; // Allow selecting same files again
 
         // Reset crop inputs
@@ -1603,6 +1617,7 @@
         previewContainer.style.display = 'block';
         exportBtn.disabled = false;
         downloadActiveBtn.disabled = false;
+        copyClipboardBtn.disabled = false;
         updateOverrideButtons();
       }
 
@@ -2257,6 +2272,62 @@
       }
 
       downloadActiveBtn.addEventListener('click', downloadActiveFile);
+
+      copyClipboardBtn.addEventListener('click', async () => {
+        const f = files[activeIndex];
+        if (!f) return;
+        const crop = f.crop ?? batchCrop;
+        if (!crop.w || !crop.h) return;
+
+        statusText.textContent = `Copying ${f.file.name}...`;
+
+        const blob = await new Promise((resolve) => {
+          const img = new Image();
+          const url = URL.createObjectURL(f.file);
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(crop.w);
+            canvas.height = Math.round(crop.h);
+            const ctx = canvas.getContext('2d');
+            if (resizeEnabled && (resizeW || resizeH)) {
+              const format = document.getElementById('export-format').value;
+              applyResizeToCanvas(canvas, ctx, img, crop, format);
+            } else {
+              if (flipH || flipV) {
+                ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
+                ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+              }
+              ctx.drawImage(
+                img,
+                Math.round(crop.x),
+                Math.round(crop.y),
+                Math.round(crop.w),
+                Math.round(crop.h),
+                0,
+                0,
+                Math.round(crop.w),
+                Math.round(crop.h)
+              );
+            }
+            applyWatermark(canvas, ctx);
+            URL.revokeObjectURL(url);
+            canvas.toBlob(resolve, 'image/png');
+          };
+          img.src = url;
+        });
+
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          const orig = copyClipboardBtn.textContent;
+          copyClipboardBtn.textContent = 'Copied!';
+          statusText.textContent = 'Copied to clipboard.';
+          setTimeout(() => {
+            copyClipboardBtn.textContent = orig;
+          }, 2000);
+        } catch (err) {
+          statusText.textContent = 'Copy failed: ' + err.message;
+        }
+      });
 
       // Aspect ratio lock
       const ratioSelect = document.getElementById('ratio-select');

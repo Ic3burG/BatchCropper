@@ -1762,10 +1762,11 @@
         }
 
         if (watermarkText) {
+          ctx.textBaseline = 'top';
           ctx.font = `${watermarkFontSize}px sans-serif`;
           const textWidth = ctx.measureText(watermarkText).width;
           const tx = isRight ? canvas.width - textWidth - margin : margin;
-          const ty = blockY + logoH + (logoH ? margin : 0) + watermarkFontSize;
+          const ty = blockY + logoH + (logoH ? margin : 0);
           ctx.shadowColor = 'rgba(0,0,0,0.7)';
           ctx.shadowBlur = 3;
           ctx.fillStyle = '#ffffff';

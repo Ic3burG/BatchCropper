@@ -975,6 +975,135 @@
             </div>
             <div class="input-group" style="margin-top: 8px">
               <label style="display: flex; align-items: center; justify-content: space-between">
+                Watermark
+                <input type="checkbox" id="watermark-enabled-chk" />
+              </label>
+              <div id="watermark-inputs" style="display: none; margin-top: 6px">
+                <input
+                  type="text"
+                  id="watermark-text"
+                  placeholder="© Your Name"
+                  style="width: 100%; margin-bottom: 6px"
+                />
+                <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px">
+                  <button
+                    class="btn btn-ghost"
+                    id="watermark-logo-btn"
+                    style="flex: 1; font-size: 11px"
+                  >
+                    Choose Logo…
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    id="watermark-logo-clear"
+                    style="font-size: 11px; display: none"
+                    title="Remove logo"
+                  >
+                    ×
+                  </button>
+                  <input
+                    type="file"
+                    id="watermark-logo-input"
+                    accept="image/*"
+                    style="display: none"
+                  />
+                </div>
+                <div
+                  id="watermark-logo-name"
+                  style="
+                    font-family: var(--mono);
+                    font-size: 10px;
+                    color: var(--text-dim);
+                    margin-bottom: 6px;
+                    display: none;
+                  "
+                ></div>
+                <div
+                  style="
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 4px;
+                    margin-bottom: 6px;
+                  "
+                >
+                  <button
+                    class="btn btn-ghost"
+                    id="wm-corner-tl"
+                    data-corner="tl"
+                    style="font-size: 10px; font-family: var(--mono)"
+                  >
+                    TL
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    id="wm-corner-tr"
+                    data-corner="tr"
+                    style="font-size: 10px; font-family: var(--mono)"
+                  >
+                    TR
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    id="wm-corner-bl"
+                    data-corner="bl"
+                    style="font-size: 10px; font-family: var(--mono)"
+                  >
+                    BL
+                  </button>
+                  <button
+                    class="btn btn-ghost"
+                    id="wm-corner-br"
+                    data-corner="br"
+                    style="font-size: 10px; font-family: var(--mono)"
+                  >
+                    BR
+                  </button>
+                </div>
+                <div class="input-group">
+                  <label>
+                    Opacity (
+                    <span id="wm-opacity-val">80</span>
+                    %)
+                  </label>
+                  <input
+                    type="range"
+                    id="watermark-opacity"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value="0.8"
+                    style="width: 100%"
+                  />
+                </div>
+                <div
+                  class="input-group"
+                  id="wm-fontsize-group"
+                  style="margin-top: 6px; display: none"
+                >
+                  <label
+                    style="
+                      font-family: var(--mono);
+                      font-size: 10px;
+                      color: var(--text-dim);
+                      display: block;
+                      margin-bottom: 4px;
+                    "
+                  >
+                    Font size (px)
+                  </label>
+                  <input
+                    type="number"
+                    id="watermark-fontsize"
+                    min="6"
+                    max="200"
+                    value="16"
+                    style="width: 100%"
+                  />
+                </div>
+              </div>
+            </div>
+            <div class="input-group" style="margin-top: 8px">
+              <label style="display: flex; align-items: center; justify-content: space-between">
                 Resize Output
                 <input type="checkbox" id="resize-enabled-chk" />
               </label>
@@ -1156,6 +1285,12 @@
       let resizeH = 0;
       let resizeMode = 'fit'; // 'fit' | 'fill' | 'stretch'
       const sectionCollapsed = { crop: false, presets: false, export: false };
+      let watermarkEnabled = false;
+      let watermarkText = '';
+      let watermarkCorner = 'br'; // 'tl' | 'tr' | 'bl' | 'br'
+      let watermarkOpacity = 0.8;
+      let watermarkFontSize = 16;
+      let watermarkLogoImg = null; // Image | null — not persisted
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
@@ -1188,6 +1323,20 @@
       const resizeModeSelect = document.getElementById('resize-mode-select');
       const detectFacesBtn = document.getElementById('detect-faces-btn');
       const detectFacesStatus = document.getElementById('detect-faces-status');
+      const watermarkEnabledChk = document.getElementById('watermark-enabled-chk');
+      const watermarkInputsDiv = document.getElementById('watermark-inputs');
+      const watermarkTextInput = document.getElementById('watermark-text');
+      const watermarkLogoBtn = document.getElementById('watermark-logo-btn');
+      const watermarkLogoClear = document.getElementById('watermark-logo-clear');
+      const watermarkLogoInput = document.getElementById('watermark-logo-input');
+      const watermarkLogoName = document.getElementById('watermark-logo-name');
+      const watermarkOpacityInput = document.getElementById('watermark-opacity');
+      const wmOpacityVal = document.getElementById('wm-opacity-val');
+      const watermarkFontsizeInput = document.getElementById('watermark-fontsize');
+      const wmFontsizeGroup = document.getElementById('wm-fontsize-group');
+      const cornerBtns = ['tl', 'tr', 'bl', 'br'].map((c) =>
+        document.getElementById('wm-corner-' + c)
+      );
 
       if ('FaceDetector' in window) {
         detectFacesBtn.style.display = 'block';
@@ -1578,6 +1727,55 @@
         }
       }
 
+      function applyWatermark(canvas, ctx) {
+        if (!watermarkEnabled) return;
+        if (!watermarkText && !watermarkLogoImg) return;
+
+        const margin = 8;
+        const isRight = watermarkCorner.includes('r');
+        const isBottom = watermarkCorner.includes('b');
+
+        ctx.save();
+        ctx.resetTransform(); // ensure watermark ignores any preceding flip transform
+        ctx.globalAlpha = watermarkOpacity;
+
+        let logoH = 0;
+        let logoW = 0;
+
+        if (watermarkLogoImg) {
+          const maxSize = Math.min(canvas.width, canvas.height) * 0.25;
+          const scale = Math.min(
+            maxSize / watermarkLogoImg.naturalWidth,
+            maxSize / watermarkLogoImg.naturalHeight
+          );
+          logoW = Math.round(watermarkLogoImg.naturalWidth * scale);
+          logoH = Math.round(watermarkLogoImg.naturalHeight * scale);
+        }
+
+        const textH = watermarkText ? watermarkFontSize : 0;
+        const totalH = logoH + (logoH && textH ? margin : 0) + textH;
+        const blockY = isBottom ? canvas.height - totalH - margin : margin;
+
+        if (watermarkLogoImg) {
+          const lx = isRight ? canvas.width - logoW - margin : margin;
+          ctx.drawImage(watermarkLogoImg, lx, blockY, logoW, logoH);
+        }
+
+        if (watermarkText) {
+          ctx.font = `${watermarkFontSize}px sans-serif`;
+          const textWidth = ctx.measureText(watermarkText).width;
+          const tx = isRight ? canvas.width - textWidth - margin : margin;
+          const ty = blockY + logoH + (logoH ? margin : 0) + watermarkFontSize;
+          ctx.shadowColor = 'rgba(0,0,0,0.7)';
+          ctx.shadowBlur = 3;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText(watermarkText, tx, ty);
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.restore();
+      }
+
       function clampCrop() {
         activeCrop.x = Math.max(0, Math.min(activeCrop.x, imgNatW - 1));
         activeCrop.y = Math.max(0, Math.min(activeCrop.y, imgNatH - 1));
@@ -1927,6 +2125,7 @@
                   Math.round(crop.h)
                 );
               }
+              applyWatermark(canvas, ctx);
               URL.revokeObjectURL(url);
               canvas.toBlob(resolve, format, exportQuality);
             };
@@ -2021,6 +2220,7 @@
                 Math.round(crop.h)
               );
             }
+            applyWatermark(canvas, ctx);
             URL.revokeObjectURL(url);
             canvas.toBlob(resolve, format, exportQuality);
           };
@@ -2198,6 +2398,11 @@
               cropCollapsed: sectionCollapsed.crop,
               exportCollapsed: sectionCollapsed.export,
               presetsCollapsed: sectionCollapsed.presets,
+              watermarkEnabled,
+              watermarkText,
+              watermarkCorner,
+              watermarkOpacity,
+              watermarkFontSize,
             })
           );
         } catch (_) {}
@@ -2254,6 +2459,29 @@
           if (s.cropCollapsed != null) sectionCollapsed.crop = s.cropCollapsed;
           if (s.exportCollapsed != null) sectionCollapsed.export = s.exportCollapsed;
           if (s.presetsCollapsed != null) sectionCollapsed.presets = s.presetsCollapsed;
+          if (s.watermarkEnabled != null) {
+            watermarkEnabled = s.watermarkEnabled;
+            watermarkEnabledChk.checked = s.watermarkEnabled;
+            watermarkInputsDiv.style.display = s.watermarkEnabled ? 'block' : 'none';
+          }
+          if (s.watermarkText != null) {
+            watermarkText = s.watermarkText;
+            watermarkTextInput.value = s.watermarkText;
+            wmFontsizeGroup.style.display = s.watermarkText ? 'block' : 'none';
+          }
+          if (s.watermarkCorner) {
+            watermarkCorner = s.watermarkCorner;
+            updateCornerButtons();
+          }
+          if (s.watermarkOpacity != null) {
+            watermarkOpacity = s.watermarkOpacity;
+            watermarkOpacityInput.value = s.watermarkOpacity;
+            wmOpacityVal.textContent = Math.round(s.watermarkOpacity * 100);
+          }
+          if (s.watermarkFontSize) {
+            watermarkFontSize = s.watermarkFontSize;
+            watermarkFontsizeInput.value = s.watermarkFontSize;
+          }
           // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}
       }
@@ -2477,6 +2705,72 @@
       });
       resizeModeSelect.addEventListener('change', () => {
         resizeMode = resizeModeSelect.value;
+        saveSettings();
+      });
+
+      watermarkEnabledChk.addEventListener('change', () => {
+        watermarkEnabled = watermarkEnabledChk.checked;
+        watermarkInputsDiv.style.display = watermarkEnabled ? 'block' : 'none';
+        saveSettings();
+      });
+
+      watermarkTextInput.addEventListener('input', () => {
+        watermarkText = watermarkTextInput.value;
+        wmFontsizeGroup.style.display = watermarkText ? 'block' : 'none';
+        saveSettings();
+      });
+
+      watermarkLogoBtn.addEventListener('click', () => watermarkLogoInput.click());
+
+      watermarkLogoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const img = new Image();
+          img.onload = () => {
+            watermarkLogoImg = img;
+            watermarkLogoName.textContent = file.name;
+            watermarkLogoName.style.display = 'block';
+            watermarkLogoClear.style.display = 'inline-block';
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+        watermarkLogoInput.value = '';
+      });
+
+      watermarkLogoClear.addEventListener('click', () => {
+        watermarkLogoImg = null;
+        watermarkLogoName.textContent = '';
+        watermarkLogoName.style.display = 'none';
+        watermarkLogoClear.style.display = 'none';
+      });
+
+      function updateCornerButtons() {
+        cornerBtns.forEach((b) => {
+          const active = b.dataset.corner === watermarkCorner;
+          b.style.color = active ? 'var(--accent)' : '';
+          b.style.borderColor = active ? 'var(--accent)' : '';
+        });
+      }
+
+      cornerBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          watermarkCorner = btn.dataset.corner;
+          updateCornerButtons();
+          saveSettings();
+        });
+      });
+
+      watermarkOpacityInput.addEventListener('input', () => {
+        watermarkOpacity = parseFloat(watermarkOpacityInput.value);
+        wmOpacityVal.textContent = Math.round(watermarkOpacity * 100);
+        saveSettings();
+      });
+
+      watermarkFontsizeInput.addEventListener('input', () => {
+        watermarkFontSize = parseInt(watermarkFontsizeInput.value) || 16;
         saveSettings();
       });
 

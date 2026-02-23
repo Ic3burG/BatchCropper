@@ -71,11 +71,11 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 - [x] **Collapsible Sections**: Crop, Presets, and Export sections collapse/expand via a shared helper; state persists across reload
 
-### v1.6 — Export Enhancements
+### v1.6 — Export Enhancements (Complete)
 
-- **AVIF Format Support**: Add `image/avif` as an export format — natively supported by Canvas API in Chrome/Firefox, no new dependency needed
-- **Watermark / Overlay Stamp**: Draw text or a logo at a fixed position on export using canvas compositing
-- **Copy to Clipboard**: Single-file "Copy cropped image" button using the browser Clipboard API
+- [x] **AVIF Format Support**: Add `image/avif` as an export format — natively supported by Canvas API in Chrome/Firefox, no new dependency needed
+- [x] **Watermark / Overlay Stamp**: Draw text or a logo at a fixed position on export using canvas compositing
+- [x] **Copy to Clipboard**: Single-file "Copy cropped image" button using the browser Clipboard API
 
 ### v1.7 — Visual Aids
 

@@ -2279,6 +2279,7 @@
         const crop = f.crop ?? batchCrop;
         if (!crop.w || !crop.h) return;
 
+        copyClipboardBtn.disabled = true;
         statusText.textContent = `Copying ${f.file.name}...`;
 
         const blob = await new Promise((resolve) => {
@@ -2323,9 +2324,11 @@
           statusText.textContent = 'Copied to clipboard.';
           setTimeout(() => {
             copyClipboardBtn.textContent = orig;
+            copyClipboardBtn.disabled = false;
           }, 2000);
         } catch (err) {
           statusText.textContent = 'Copy failed: ' + err.message;
+          copyClipboardBtn.disabled = false;
         }
       });
 

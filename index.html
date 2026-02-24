@@ -713,7 +713,16 @@
             </div>
             <canvas
               id="compare-canvas"
-              style="display: none; position: absolute; inset: 0; pointer-events: none"
+              style="
+                display: none;
+                position: absolute;
+                top: 0;
+                right: 0;
+                bottom: 0;
+                left: 50%;
+                pointer-events: auto;
+                border-left: 1px solid rgba(255, 255, 255, 0.2);
+              "
             ></canvas>
           </div>
         </div>
@@ -1597,7 +1606,6 @@
         compareBtn.style.display = 'none';
         compareMode = false;
         compareCanvas.style.display = 'none';
-        compareCanvas.style.pointerEvents = 'none';
 
         // Reset crop inputs
         inX.value = 0;
@@ -1934,56 +1942,22 @@
 
       function renderCompare() {
         const crop = activeCrop;
-        const container = compareCanvas.parentElement;
-        const cw = container.offsetWidth;
-        const ch = container.offsetHeight;
+        const cw = compareCanvas.offsetWidth;
+        const ch = compareCanvas.offsetHeight;
         compareCanvas.width = cw;
         compareCanvas.height = ch;
         const ctx = compareCanvas.getContext('2d');
 
-        const half = Math.floor(cw / 2);
-
-        // Fill entire canvas — fully replaces crop editor while compare is active
+        // Canvas covers only the right half — fill with dark background
         ctx.fillStyle = '#0e0e0e';
         ctx.fillRect(0, 0, cw, ch);
 
-        // Left half: full original image scaled to fit
-        const imgW = previewImg.naturalWidth;
-        const imgH = previewImg.naturalHeight;
-        const scaleLeft = Math.min(half / imgW, ch / imgH);
-        const lw = imgW * scaleLeft;
-        const lh = imgH * scaleLeft;
-        const lx = (half - lw) / 2;
-        const ly = (ch - lh) / 2;
-        ctx.drawImage(previewImg, lx, ly, lw, lh);
-
-        // Draw crop rectangle on left half
+        // Cropped result, centered
         if (crop.w && crop.h) {
-          ctx.strokeStyle = '#7eb8f7';
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(
-            lx + crop.x * scaleLeft,
-            ly + crop.y * scaleLeft,
-            crop.w * scaleLeft,
-            crop.h * scaleLeft
-          );
-        }
-
-        // Divider
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.fillRect(half, 0, 1, ch);
-
-        // Right half: cropped region
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(half + 1, 0, cw - half - 1, ch);
-        ctx.clip();
-
-        if (crop.w && crop.h) {
-          const scaleRight = Math.min((cw - half - 1) / crop.w, ch / crop.h);
-          const rw = crop.w * scaleRight;
-          const rh = crop.h * scaleRight;
-          const rx = half + 1 + (cw - half - 1 - rw) / 2;
+          const scale = Math.min(cw / crop.w, ch / crop.h);
+          const rw = crop.w * scale;
+          const rh = crop.h * scale;
+          const rx = (cw - rw) / 2;
           const ry = (ch - rh) / 2;
           ctx.drawImage(previewImg, crop.x, crop.y, crop.w, crop.h, rx, ry, rw, rh);
         } else {
@@ -1991,10 +1965,8 @@
           ctx.font = '13px sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('No crop selected', half + (cw - half) / 2, ch / 2);
+          ctx.fillText('No crop selected', cw / 2, ch / 2);
         }
-
-        ctx.restore();
       }
 
       // Mouse crop interaction
@@ -2775,7 +2747,6 @@
       compareBtn.addEventListener('click', () => {
         compareMode = !compareMode;
         compareCanvas.style.display = compareMode ? 'block' : 'none';
-        compareCanvas.style.pointerEvents = compareMode ? 'auto' : 'none';
         compareBtn.style.color = compareMode ? 'var(--accent)' : '';
         compareBtn.style.borderColor = compareMode ? 'var(--accent)' : '';
         if (compareMode) renderCompare();

@@ -1597,6 +1597,7 @@
         compareBtn.style.display = 'none';
         compareMode = false;
         compareCanvas.style.display = 'none';
+        compareCanvas.style.pointerEvents = 'none';
 
         // Reset crop inputs
         inX.value = 0;
@@ -1942,10 +1943,31 @@
 
         const half = Math.floor(cw / 2);
 
-        // Left half stays transparent — crop editor is visible underneath
-        // Right half: solid background + cropped preview
+        // Fill entire canvas — fully replaces crop editor while compare is active
         ctx.fillStyle = '#0e0e0e';
-        ctx.fillRect(half + 1, 0, cw - half - 1, ch);
+        ctx.fillRect(0, 0, cw, ch);
+
+        // Left half: full original image scaled to fit
+        const imgW = previewImg.naturalWidth;
+        const imgH = previewImg.naturalHeight;
+        const scaleLeft = Math.min(half / imgW, ch / imgH);
+        const lw = imgW * scaleLeft;
+        const lh = imgH * scaleLeft;
+        const lx = (half - lw) / 2;
+        const ly = (ch - lh) / 2;
+        ctx.drawImage(previewImg, lx, ly, lw, lh);
+
+        // Draw crop rectangle on left half
+        if (crop.w && crop.h) {
+          ctx.strokeStyle = '#7eb8f7';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(
+            lx + crop.x * scaleLeft,
+            ly + crop.y * scaleLeft,
+            crop.w * scaleLeft,
+            crop.h * scaleLeft
+          );
+        }
 
         // Divider
         ctx.fillStyle = 'rgba(255,255,255,0.2)';
@@ -2753,6 +2775,7 @@
       compareBtn.addEventListener('click', () => {
         compareMode = !compareMode;
         compareCanvas.style.display = compareMode ? 'block' : 'none';
+        compareCanvas.style.pointerEvents = compareMode ? 'auto' : 'none';
         compareBtn.style.color = compareMode ? 'var(--accent)' : '';
         compareBtn.style.borderColor = compareMode ? 'var(--accent)' : '';
         if (compareMode) renderCompare();

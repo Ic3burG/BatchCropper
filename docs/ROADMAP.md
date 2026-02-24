@@ -77,10 +77,14 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 - [x] **Watermark / Overlay Stamp**: Draw text or a logo at a fixed position on export using canvas compositing
 - [x] **Copy to Clipboard**: Single-file "Copy cropped image" button using the browser Clipboard API
 
-### v1.7 — Visual Aids
+### v1.7 — Visual Aids (Complete)
 
-- **Golden Ratio Grid Overlay**: Alternative to rule-of-thirds, togglable alongside existing grid
-- **Crop Comparison View**: Side-by-side before/after preview within the canvas
+- [x] **Golden Ratio Grid Overlay**: Alternative to rule-of-thirds, togglable alongside existing grid
+- [x] **Crop Comparison View**: Side-by-side before/after preview within the canvas
+- **Rotation Handle**: Deferred to v1.8
+
+### v1.8 — Rotation
+
 - **Rotation Handle**: Rotate the crop box (not the image) before export using canvas transform
 
 ### v2.0 — New Paradigm (Breaking Changes)

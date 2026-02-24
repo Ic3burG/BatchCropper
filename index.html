@@ -214,14 +214,34 @@
 
       #crop-box.grid-golden::after {
         background:
-          linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px) 38.2% 0 / 100%
-            100%,
-          linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px) 61.8% 0 / 100%
-            100%,
-          linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px) 0 38.2% / 100%
-            100%,
-          linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px) 0 61.8% / 100%
-            100%;
+          linear-gradient(
+            to right,
+            transparent 38.2%,
+            rgba(255, 255, 255, 0.15) 38.2%,
+            rgba(255, 255, 255, 0.15) calc(38.2% + 1px),
+            transparent calc(38.2% + 1px)
+          ),
+          linear-gradient(
+            to right,
+            transparent 61.8%,
+            rgba(255, 255, 255, 0.15) 61.8%,
+            rgba(255, 255, 255, 0.15) calc(61.8% + 1px),
+            transparent calc(61.8% + 1px)
+          ),
+          linear-gradient(
+            to bottom,
+            transparent 38.2%,
+            rgba(255, 255, 255, 0.15) 38.2%,
+            rgba(255, 255, 255, 0.15) calc(38.2% + 1px),
+            transparent calc(38.2% + 1px)
+          ),
+          linear-gradient(
+            to bottom,
+            transparent 61.8%,
+            rgba(255, 255, 255, 0.15) 61.8%,
+            rgba(255, 255, 255, 0.15) calc(61.8% + 1px),
+            transparent calc(61.8% + 1px)
+          );
       }
 
       .handle {
@@ -1577,7 +1597,6 @@
         compareBtn.style.display = 'none';
         compareMode = false;
         compareCanvas.style.display = 'none';
-        previewContainer.style.opacity = '';
         previewContainer.style.pointerEvents = '';
 
         // Reset crop inputs
@@ -1921,7 +1940,8 @@
         compareCanvas.width = cw;
         compareCanvas.height = ch;
         const ctx = compareCanvas.getContext('2d');
-        ctx.clearRect(0, 0, cw, ch);
+        ctx.fillStyle = '#0e0e0e';
+        ctx.fillRect(0, 0, cw, ch);
 
         const half = Math.floor(cw / 2);
 
@@ -2753,7 +2773,6 @@
       compareBtn.addEventListener('click', () => {
         compareMode = !compareMode;
         compareCanvas.style.display = compareMode ? 'block' : 'none';
-        previewContainer.style.opacity = compareMode ? '0' : '';
         previewContainer.style.pointerEvents = compareMode ? 'none' : '';
         compareBtn.style.color = compareMode ? 'var(--accent)' : '';
         compareBtn.style.borderColor = compareMode ? 'var(--accent)' : '';

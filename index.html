@@ -2748,10 +2748,9 @@
 
       compareBtn.addEventListener('click', () => {
         compareMode = !compareMode;
-        const previewContainerEl = document.getElementById('preview-container');
         compareCanvas.style.display = compareMode ? 'block' : 'none';
-        previewContainerEl.style.opacity = compareMode ? '0' : '';
-        previewContainerEl.style.pointerEvents = compareMode ? 'none' : '';
+        previewContainer.style.opacity = compareMode ? '0' : '';
+        previewContainer.style.pointerEvents = compareMode ? 'none' : '';
         compareBtn.style.color = compareMode ? 'var(--accent)' : '';
         compareBtn.style.borderColor = compareMode ? 'var(--accent)' : '';
         if (compareMode) renderCompare();

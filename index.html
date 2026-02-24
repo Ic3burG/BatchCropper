@@ -652,6 +652,14 @@
               Fit
             </button>
           </div>
+          <button
+            class="btn btn-ghost"
+            id="compare-btn"
+            style="padding: 4px 8px; font-size: 11px; display: none"
+            title="Toggle before/after comparison view"
+          >
+            ◫ Compare
+          </button>
           <div class="coords" id="coords-display">drag to select crop region</div>
         </div>
         <div class="canvas-wrap" id="canvas-wrap">
@@ -679,6 +687,10 @@
               <div class="handle bm" data-handle="bm"></div>
               <div class="handle br" data-handle="br"></div>
             </div>
+            <canvas
+              id="compare-canvas"
+              style="display: none; position: absolute; inset: 0; pointer-events: none"
+            ></canvas>
           </div>
         </div>
       </div>
@@ -1333,6 +1345,8 @@
       const fileInput = document.getElementById('file-input');
       const previewContainer = document.getElementById('preview-container');
       const previewImg = document.getElementById('preview-img');
+      const compareCanvas = document.getElementById('compare-canvas');
+      const compareBtn = document.getElementById('compare-btn');
       const cropBox = document.getElementById('crop-box');
       const cropBoxEl = document.getElementById('crop-box');
       const cropOverlay = document.getElementById('crop-overlay');
@@ -1556,6 +1570,11 @@
         downloadActiveBtn.disabled = true;
         copyClipboardBtn.disabled = true;
         fileInput.value = ''; // Allow selecting same files again
+        compareBtn.style.display = 'none';
+        compareMode = false;
+        compareCanvas.style.display = 'none';
+        previewContainer.style.opacity = '';
+        previewContainer.style.pointerEvents = '';
 
         // Reset crop inputs
         inX.value = 0;
@@ -1650,6 +1669,7 @@
         exportBtn.disabled = false;
         downloadActiveBtn.disabled = false;
         copyClipboardBtn.disabled = false;
+        compareBtn.style.display = 'block';
         updateOverrideButtons();
       }
 
@@ -1886,6 +1906,69 @@
   `;
 
         coordsDisplay.innerHTML = `<span>${Math.round(activeCrop.x)}, ${Math.round(activeCrop.y)}</span> &nbsp; <span>${Math.round(activeCrop.w)} × ${Math.round(activeCrop.h)}</span>`;
+        if (compareMode) renderCompare();
+      }
+
+      function renderCompare() {
+        const crop = activeCrop;
+        const container = compareCanvas.parentElement;
+        const cw = container.offsetWidth;
+        const ch = container.offsetHeight;
+        compareCanvas.width = cw;
+        compareCanvas.height = ch;
+        const ctx = compareCanvas.getContext('2d');
+        ctx.clearRect(0, 0, cw, ch);
+
+        const half = Math.floor(cw / 2);
+
+        // Left half: full original image scaled to fit
+        const imgW = previewImg.naturalWidth;
+        const imgH = previewImg.naturalHeight;
+        const scaleLeft = Math.min(half / imgW, ch / imgH);
+        const lw = imgW * scaleLeft;
+        const lh = imgH * scaleLeft;
+        const lx = (half - lw) / 2;
+        const ly = (ch - lh) / 2;
+        ctx.drawImage(previewImg, lx, ly, lw, lh);
+
+        // Draw crop rectangle on left half
+        if (crop.w && crop.h) {
+          ctx.strokeStyle = '#7eb8f7';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(
+            lx + crop.x * scaleLeft,
+            ly + crop.y * scaleLeft,
+            crop.w * scaleLeft,
+            crop.h * scaleLeft
+          );
+        }
+
+        // Divider
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.fillRect(half, 0, 1, ch);
+
+        // Right half: cropped region
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(half + 1, 0, cw - half - 1, ch);
+        ctx.clip();
+
+        if (crop.w && crop.h) {
+          const scaleRight = Math.min((cw - half - 1) / crop.w, ch / crop.h);
+          const rw = crop.w * scaleRight;
+          const rh = crop.h * scaleRight;
+          const rx = half + 1 + (cw - half - 1 - rw) / 2;
+          const ry = (ch - rh) / 2;
+          ctx.drawImage(previewImg, crop.x, crop.y, crop.w, crop.h, rx, ry, rw, rh);
+        } else {
+          ctx.fillStyle = 'rgba(255,255,255,0.3)';
+          ctx.font = '13px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('No crop selected', half + (cw - half) / 2, ch / 2);
+        }
+
+        ctx.restore();
       }
 
       // Mouse crop interaction
@@ -2661,6 +2744,17 @@
         showGoldenGrid = !showGoldenGrid;
         applyGridClasses();
         saveSettings();
+      });
+
+      compareBtn.addEventListener('click', () => {
+        compareMode = !compareMode;
+        const previewContainerEl = document.getElementById('preview-container');
+        compareCanvas.style.display = compareMode ? 'block' : 'none';
+        previewContainerEl.style.opacity = compareMode ? '0' : '';
+        previewContainerEl.style.pointerEvents = compareMode ? 'none' : '';
+        compareBtn.style.color = compareMode ? 'var(--accent)' : '';
+        compareBtn.style.borderColor = compareMode ? 'var(--accent)' : '';
+        if (compareMode) renderCompare();
       });
 
       const cropModeBtn = document.getElementById('crop-mode-btn');

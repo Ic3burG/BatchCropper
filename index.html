@@ -195,20 +195,29 @@
         display: none;
       }
 
-      /* Rule-of-thirds grid lines */
+      /* Grid overlays — toggled via CSS classes on #crop-box */
       #crop-box::before,
       #crop-box::after {
         content: '';
         position: absolute;
         inset: 0;
+        pointer-events: none;
       }
 
-      #crop-box::before {
+      #crop-box.grid-thirds::before {
         background:
           linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px) 33.33% 0 /
             33.33% 100%,
           linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px) 0 33.33% / 100%
             33.33%;
+      }
+
+      #crop-box.grid-golden::after {
+        background:
+          linear-gradient(to right, rgba(255, 255, 255, 0.15) 1px, transparent 1px) 38.2% 0 / 38.2%
+            100%,
+          linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 1px, transparent 1px) 0 38.2% / 100%
+            38.2%;
       }
 
       .handle {
@@ -828,6 +837,23 @@
                 display: none;
               "
             ></div>
+            <div style="display: flex; gap: 4px; margin-top: 4px">
+              <button
+                class="btn btn-ghost"
+                id="grid-thirds-btn"
+                style="flex: 1; font-size: 11px; font-family: var(--mono)"
+                title="Toggle rule-of-thirds grid"
+              >
+                ⊞ ⅓
+              </button>
+              <button
+                class="btn btn-ghost"
+                id="grid-golden-btn"
+                style="flex: 1; font-size: 11px; font-family: var(--mono)"
+              >
+                ⊞ φ
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1299,15 +1325,21 @@
       let watermarkOpacity = 0.8;
       let watermarkFontSize = 16;
       let watermarkLogoImg = null; // Image | null — not persisted
+      let showThirdsGrid = true;
+      let showGoldenGrid = false;
+      let compareMode = false;
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
       const previewContainer = document.getElementById('preview-container');
       const previewImg = document.getElementById('preview-img');
       const cropBox = document.getElementById('crop-box');
+      const cropBoxEl = document.getElementById('crop-box');
       const cropOverlay = document.getElementById('crop-overlay');
       const coordsDisplay = document.getElementById('coords-display');
       const exportBtn = document.getElementById('export-btn');
+      const gridThirdsBtn = document.getElementById('grid-thirds-btn');
+      const gridGoldenBtn = document.getElementById('grid-golden-btn');
       const fileList = document.getElementById('file-list');
       const fileCount = document.getElementById('file-count');
       const clearFilesBtn = document.getElementById('clear-files');
@@ -2478,6 +2510,8 @@
               watermarkCorner,
               watermarkOpacity,
               watermarkFontSize,
+              showThirdsGrid,
+              showGoldenGrid,
             })
           );
         } catch (_) {}
@@ -2557,6 +2591,9 @@
             watermarkFontSize = s.watermarkFontSize;
             watermarkFontsizeInput.value = s.watermarkFontSize;
           }
+          if (s.showThirdsGrid != null) showThirdsGrid = s.showThirdsGrid;
+          if (s.showGoldenGrid != null) showGoldenGrid = s.showGoldenGrid;
+          applyGridClasses();
           // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}
       }
@@ -2603,6 +2640,27 @@
         flipVBtn.style.color = flipV ? 'var(--accent)' : '';
         flipVBtn.style.borderColor = flipV ? 'var(--accent)' : '';
         applyFlipPreview();
+      });
+
+      function applyGridClasses() {
+        cropBoxEl.classList.toggle('grid-thirds', showThirdsGrid);
+        cropBoxEl.classList.toggle('grid-golden', showGoldenGrid);
+        gridThirdsBtn.style.color = showThirdsGrid ? 'var(--accent)' : '';
+        gridThirdsBtn.style.borderColor = showThirdsGrid ? 'var(--accent)' : '';
+        gridGoldenBtn.style.color = showGoldenGrid ? 'var(--accent)' : '';
+        gridGoldenBtn.style.borderColor = showGoldenGrid ? 'var(--accent)' : '';
+      }
+
+      gridThirdsBtn.addEventListener('click', () => {
+        showThirdsGrid = !showThirdsGrid;
+        applyGridClasses();
+        saveSettings();
+      });
+
+      gridGoldenBtn.addEventListener('click', () => {
+        showGoldenGrid = !showGoldenGrid;
+        applyGridClasses();
+        saveSettings();
       });
 
       const cropModeBtn = document.getElementById('crop-mode-btn');

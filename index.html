@@ -102,6 +102,13 @@
         color: var(--accent);
       }
 
+      .canvas-body {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+
       .canvas-wrap {
         flex: 1;
         overflow: auto;
@@ -110,6 +117,19 @@
         justify-content: center;
         background: repeating-conic-gradient(#1a1a1a 0% 25%, #141414 0% 50%) 0 0 / 20px 20px;
         position: relative;
+      }
+
+      #compare-panel {
+        display: none;
+        flex: 1;
+        border-left: 1px solid var(--border);
+        background: #0e0e0e;
+        position: relative;
+      }
+
+      #compare-panel canvas {
+        position: absolute;
+        inset: 0;
       }
 
       .drop-zone {
@@ -686,44 +706,36 @@
           </button>
           <div class="coords" id="coords-display">drag to select crop region</div>
         </div>
-        <div class="canvas-wrap" id="canvas-wrap">
-          <div class="drop-zone" id="drop-zone">
-            <div class="drop-zone-icon">⬚</div>
-            <p>
-              Drop images here
-              <br />
-              <strong>or click to browse</strong>
-              <br />
-              <span style="opacity: 0.5">PNG, JPG, WEBP · multiple files OK</span>
-            </p>
-            <input type="file" id="file-input" accept="image/*" multiple style="display: none" />
-          </div>
-          <div id="preview-container">
-            <img id="preview-img" draggable="false" />
-            <div id="crop-overlay"></div>
-            <div id="crop-box">
-              <div class="handle tl" data-handle="tl"></div>
-              <div class="handle tm" data-handle="tm"></div>
-              <div class="handle tr" data-handle="tr"></div>
-              <div class="handle ml" data-handle="ml"></div>
-              <div class="handle mr" data-handle="mr"></div>
-              <div class="handle bl" data-handle="bl"></div>
-              <div class="handle bm" data-handle="bm"></div>
-              <div class="handle br" data-handle="br"></div>
+        <div class="canvas-body">
+          <div class="canvas-wrap" id="canvas-wrap">
+            <div class="drop-zone" id="drop-zone">
+              <div class="drop-zone-icon">⬚</div>
+              <p>
+                Drop images here
+                <br />
+                <strong>or click to browse</strong>
+                <br />
+                <span style="opacity: 0.5">PNG, JPG, WEBP · multiple files OK</span>
+              </p>
+              <input type="file" id="file-input" accept="image/*" multiple style="display: none" />
             </div>
-            <canvas
-              id="compare-canvas"
-              style="
-                display: none;
-                position: absolute;
-                top: 0;
-                right: 0;
-                bottom: 0;
-                left: 50%;
-                pointer-events: auto;
-                border-left: 1px solid rgba(255, 255, 255, 0.2);
-              "
-            ></canvas>
+            <div id="preview-container">
+              <img id="preview-img" draggable="false" />
+              <div id="crop-overlay"></div>
+              <div id="crop-box">
+                <div class="handle tl" data-handle="tl"></div>
+                <div class="handle tm" data-handle="tm"></div>
+                <div class="handle tr" data-handle="tr"></div>
+                <div class="handle ml" data-handle="ml"></div>
+                <div class="handle mr" data-handle="mr"></div>
+                <div class="handle bl" data-handle="bl"></div>
+                <div class="handle bm" data-handle="bm"></div>
+                <div class="handle br" data-handle="br"></div>
+              </div>
+            </div>
+          </div>
+          <div id="compare-panel">
+            <canvas id="compare-canvas"></canvas>
           </div>
         </div>
       </div>
@@ -1378,6 +1390,7 @@
       const fileInput = document.getElementById('file-input');
       const previewContainer = document.getElementById('preview-container');
       const previewImg = document.getElementById('preview-img');
+      const comparePanel = document.getElementById('compare-panel');
       const compareCanvas = document.getElementById('compare-canvas');
       const compareBtn = document.getElementById('compare-btn');
       const cropBox = document.getElementById('crop-box');
@@ -1605,7 +1618,7 @@
         fileInput.value = ''; // Allow selecting same files again
         compareBtn.style.display = 'none';
         compareMode = false;
-        compareCanvas.style.display = 'none';
+        comparePanel.style.display = 'none';
 
         // Reset crop inputs
         inX.value = 0;
@@ -2746,7 +2759,7 @@
 
       compareBtn.addEventListener('click', () => {
         compareMode = !compareMode;
-        compareCanvas.style.display = compareMode ? 'block' : 'none';
+        comparePanel.style.display = compareMode ? 'block' : 'none';
         compareBtn.style.color = compareMode ? 'var(--accent)' : '';
         compareBtn.style.borderColor = compareMode ? 'var(--accent)' : '';
         if (compareMode) renderCompare();

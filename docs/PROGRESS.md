@@ -165,3 +165,64 @@
 - `npm run format:check` passes. ✅
 
 **Status:** ✅ v1.2 features completed and pushed to branch `v1.2-export-enhancements`.
+
+---
+
+## Session: February 26, 2026 (v1.8 Feature Development)
+
+### 🔄 BatchCropper v1.8 — Rotation Handle
+
+**Goal:** Add a rotation handle to the crop box so users can rotate the crop selection before export, producing a clean rectangular output (the source image rotates to match the box orientation).
+
+**Process:** Design doc → implementation plan → plan-driven execution (11 tasks) with per-batch commits.
+
+**Architecture decisions:**
+
+- CSS `transform: rotate()` on `#crop-box` for live preview — no canvas redraws during drag
+- Floating `#rotation-handle` (circle) and `#rotation-stem` (line) positioned absolutely inside `#preview-container`, siblings of `#crop-box`, always above the crop box in z-order
+- `cropRotation` (degrees, -180 to +180) as a standalone global — not folded into `activeCrop` directly, but snapshotted into crop objects on save and in history entries
+- At export, `drawCroppedImage()` helper extracted to consolidate flip + rotation logic across all three export paths (batch ZIP, single download, clipboard copy); uses center-pivot canvas rotation
+- When rotated, overlay masks are suppressed (they can't accurately track a tilted box) and the image dims to 55% opacity instead — restores automatically when rotation returns to 0°
+
+**Features implemented:**
+
+- **Rotation drag handle** — circular handle floating above the crop box center; dragging computes the angle delta relative to the crop center using `Math.atan2`; snaps to exactly 0° within ±2°; uses `setPointerCapture` for reliable drag tracking
+- **Rotation stem** — thin line connecting crop box top-center to the handle, rotates with the box using a fixed `transformOrigin` at its base
+- **Sidebar rotation controls** — number input (0.1° step), range slider (0.5° step), and `⟳` reset button; all three stay in sync via `syncRotationUI()`
+- **Coordinate display** — shows `R: N.N°` annotation alongside X/Y/W×H when rotation is non-zero
+- **Un-rotated pointer deltas** — move and resize handle drags apply an inverse rotation matrix to `(dx, dy)` so the crop moves in its own local coordinate frame rather than screen space; new-selection drags remain axis-aligned
+- **Undo/redo** — `pushHistory()` snapshots include `rotation`; undo/redo restore reads `snap.rotation ?? 0` and calls `syncRotationUI()`
+- **Per-file override persistence** — save-override stores `rotation: cropRotation` in `files[i].crop`; file switch restores rotation from the loaded crop object; reset-crop and clearFiles both reset rotation to 0
+- **Export** — `drawCroppedImage(ctx, img, crop)` helper handles rotation via translate-to-center → rotate → draw full image offset so crop center lands at origin; flip (H/V) is composed correctly with rotation in all cases
+- **Compare view** — `renderCompare()` applies the same center-pivot rotation to the after-panel canvas when `cropRotation !== 0`
+
+**Key implementation details:**
+
+- `syncRotationUI()` helper updates both sidebar controls and keeps `batchCrop.rotation` in sync when `activeCrop === batchCrop`
+- The `drawCroppedImage` helper uses closure access to `flipH`/`flipV` — flip transform is applied before translate+rotate so the composition is rotate-then-flip (matching expected visual output)
+- Compare view draws from `previewImg` (the DOM `<img>` element) as the canvas source, avoiding an extra image decode
+- All `innerHTML` assignments in the updated overlay/coords code use only computed numeric values — XSS-safe
+
+**Commits:**
+
+| Hash      | Description                                                                                              |
+| --------- | -------------------------------------------------------------------------------------------------------- |
+| `2f7797c` | `feat(rotation): add cropRotation state, rotation-handle DOM/CSS, sidebar controls, updateCropBoxVisual` |
+| `176fc5c` | `feat(rotation): drag handle events, sidebar wiring, un-rotate pointer deltas`                           |
+| `69bdbbd` | `feat(rotation): undo/redo, file override persistence, drawCroppedImage export helper`                   |
+| `4422356` | `feat(rotation): compare view rotation support; mark v1.8 complete in roadmap`                           |
+| `7cc2dff` | `style: prettier format`                                                                                 |
+| `b09bc90` | `style: prettier format plan docs`                                                                       |
+
+**Docs committed:**
+
+- `docs/plans/2026-02-26-v1.8-rotation-design.md` — full design spec
+- `docs/plans/2026-02-26-v1.8-rotation.md` — step-by-step implementation plan (11 tasks)
+- `docs/ROADMAP.md` — v1.8 marked complete
+
+**Verification:**
+
+- `npm run format:check` passes ✅
+- Manual test checklist (from plan): draw, rotate via drag/input/slider, undo, file switch, reset, export ZIP/single/clipboard, compare view — all verified against plan specification
+
+**Status:** ✅ v1.8 rotation handle fully implemented and committed to `main`.

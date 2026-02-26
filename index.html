@@ -1785,6 +1785,8 @@
           imgNatW = previewImg.naturalWidth;
           imgNatH = previewImg.naturalHeight;
           activeCrop = files[idx].crop ?? batchCrop;
+          cropRotation = activeCrop.rotation ?? 0;
+          syncRotationUI();
           if (!files[idx].info) {
             files[idx].info = { w: imgNatW, h: imgNatH, size: files[idx].file.size };
             renderFileList();
@@ -1930,6 +1932,28 @@
         }
       }
 
+      function drawCroppedImage(ctx, img, crop) {
+        const cw = Math.round(crop.w);
+        const ch = Math.round(crop.h);
+        const rotation = crop.rotation ?? 0;
+        if (rotation !== 0) {
+          const rad = -(rotation * Math.PI) / 180;
+          if (flipH || flipV) {
+            ctx.translate(flipH ? cw : 0, flipV ? ch : 0);
+            ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+          }
+          ctx.translate(cw / 2, ch / 2);
+          ctx.rotate(rad);
+          ctx.drawImage(img, -(crop.x + cw / 2), -(crop.y + ch / 2), img.naturalWidth, img.naturalHeight);
+        } else {
+          if (flipH || flipV) {
+            ctx.translate(flipH ? cw : 0, flipV ? ch : 0);
+            ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+          }
+          ctx.drawImage(img, Math.round(crop.x), Math.round(crop.y), cw, ch, 0, 0, cw, ch);
+        }
+      }
+
       function applyWatermark(canvas, ctx) {
         if (!watermarkEnabled) return;
         if (!watermarkText && !watermarkLogoImg) return;
@@ -1993,11 +2017,12 @@
           last.x === activeCrop.x &&
           last.y === activeCrop.y &&
           last.w === activeCrop.w &&
-          last.h === activeCrop.h
+          last.h === activeCrop.h &&
+          last.rotation === cropRotation
         )
           return;
         cropHistory = cropHistory.slice(0, historyIndex + 1);
-        cropHistory.push({ ...activeCrop });
+        cropHistory.push({ ...activeCrop, rotation: cropRotation });
         if (cropHistory.length > HISTORY_LIMIT) cropHistory.shift();
         else historyIndex++;
       }
@@ -2324,7 +2349,7 @@
       document.getElementById('save-override').addEventListener('click', () => {
         if (!files[activeIndex]) return;
         if (!activeCrop.w || !activeCrop.h) return; // don't save a zero-area crop
-        files[activeIndex].crop = { ...activeCrop };
+        files[activeIndex].crop = { ...activeCrop, rotation: cropRotation };
         activeCrop = files[activeIndex].crop;
         renderFileList();
       });
@@ -2394,6 +2419,8 @@
       document.getElementById('reset-crop').addEventListener('click', () => {
         // Note: intentionally resets to full image, does not snap to aspectRatio
         Object.assign(activeCrop, { x: 0, y: 0, w: imgNatW, h: imgNatH });
+        cropRotation = 0;
+        syncRotationUI();
         updateInputs();
         updateCropBoxVisual();
         pushHistory();
@@ -2455,21 +2482,7 @@
               if (resizeEnabled && (resizeW || resizeH)) {
                 applyResizeToCanvas(canvas, ctx, img, crop, format);
               } else {
-                if (flipH || flipV) {
-                  ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
-                  ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-                }
-                ctx.drawImage(
-                  img,
-                  Math.round(crop.x),
-                  Math.round(crop.y),
-                  Math.round(crop.w),
-                  Math.round(crop.h),
-                  0,
-                  0,
-                  Math.round(crop.w),
-                  Math.round(crop.h)
-                );
+                drawCroppedImage(ctx, img, crop);
               }
               applyWatermark(canvas, ctx);
               URL.revokeObjectURL(url);
@@ -2550,21 +2563,7 @@
             if (resizeEnabled && (resizeW || resizeH)) {
               applyResizeToCanvas(canvas, ctx, img, crop, format);
             } else {
-              if (flipH || flipV) {
-                ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
-                ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-              }
-              ctx.drawImage(
-                img,
-                Math.round(crop.x),
-                Math.round(crop.y),
-                Math.round(crop.w),
-                Math.round(crop.h),
-                0,
-                0,
-                Math.round(crop.w),
-                Math.round(crop.h)
-              );
+              drawCroppedImage(ctx, img, crop);
             }
             applyWatermark(canvas, ctx);
             URL.revokeObjectURL(url);
@@ -2624,21 +2623,7 @@
               const format = document.getElementById('export-format').value;
               applyResizeToCanvas(canvas, ctx, img, crop, format);
             } else {
-              if (flipH || flipV) {
-                ctx.translate(flipH ? canvas.width : 0, flipV ? canvas.height : 0);
-                ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
-              }
-              ctx.drawImage(
-                img,
-                Math.round(crop.x),
-                Math.round(crop.y),
-                Math.round(crop.w),
-                Math.round(crop.h),
-                0,
-                0,
-                Math.round(crop.w),
-                Math.round(crop.h)
-              );
+              drawCroppedImage(ctx, img, crop);
             }
             applyWatermark(canvas, ctx);
             URL.revokeObjectURL(url);
@@ -2906,12 +2891,18 @@
         e.preventDefault();
         if (isUndo && historyIndex > 0) {
           historyIndex--;
-          Object.assign(activeCrop, cropHistory[historyIndex]);
+          const snap = cropHistory[historyIndex];
+          Object.assign(activeCrop, snap);
+          cropRotation = snap.rotation ?? 0;
+          syncRotationUI();
           updateInputs();
           updateCropBoxVisual();
         } else if (isRedo && historyIndex < cropHistory.length - 1) {
           historyIndex++;
-          Object.assign(activeCrop, cropHistory[historyIndex]);
+          const snap = cropHistory[historyIndex];
+          Object.assign(activeCrop, snap);
+          cropRotation = snap.rotation ?? 0;
+          syncRotationUI();
           updateInputs();
           updateCropBoxVisual();
         }

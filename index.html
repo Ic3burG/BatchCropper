@@ -1440,6 +1440,10 @@
       let dragMode = null; // 'new', 'move', 'tl','tr','bl','br','tm','bm','ml','mr'
       let dragStart = { x: 0, y: 0 };
       let cropStart = { x: 0, y: 0, w: 0, h: 0 };
+      let rotDragActive = false;
+      let rotDragStartAngle = 0;
+      let rotDragStartRotation = 0;
+      let rotCenter = { x: 0, y: 0 };
       // Undo/Redo
       const HISTORY_LIMIT = 50;
       let cropHistory = [];
@@ -2200,6 +2204,15 @@
         const dx = (e.clientX - dragStart.x) / zoom;
         const dy = (e.clientY - dragStart.y) / zoom;
 
+        // Un-rotate pointer delta so move/resize work correctly on a rotated crop box
+        let adx = dx,
+          ady = dy;
+        if (cropRotation !== 0 && dragMode !== 'new') {
+          const rad = -(cropRotation * Math.PI) / 180;
+          adx = dx * Math.cos(rad) - dy * Math.sin(rad);
+          ady = dx * Math.sin(rad) + dy * Math.cos(rad);
+        }
+
         if (dragMode === 'new') {
           const p = imgPos(e);
           const x = Math.min(cropStart.x, p.x);
@@ -2209,39 +2222,39 @@
           if (aspectRatio) h = w / aspectRatio;
           Object.assign(activeCrop, { x, y, w, h });
         } else if (dragMode === 'move') {
-          activeCrop.x = Math.max(0, Math.min(cropStart.x + dx, imgNatW - cropStart.w));
-          activeCrop.y = Math.max(0, Math.min(cropStart.y + dy, imgNatH - cropStart.h));
+          activeCrop.x = Math.max(0, Math.min(cropStart.x + adx, imgNatW - cropStart.w));
+          activeCrop.y = Math.max(0, Math.min(cropStart.y + ady, imgNatH - cropStart.h));
         } else {
           let { x, y, w, h } = cropStart;
 
           if (dragMode.includes('l')) {
-            x = cropStart.x + dx;
-            w = cropStart.w - dx;
+            x = cropStart.x + adx;
+            w = cropStart.w - adx;
           }
           if (dragMode.includes('r')) {
-            w = cropStart.w + dx;
+            w = cropStart.w + adx;
           }
           if (dragMode.includes('t') && dragMode !== 'tr') {
-            y = cropStart.y + dy;
-            h = cropStart.h - dy;
+            y = cropStart.y + ady;
+            h = cropStart.h - ady;
           }
           if (dragMode.includes('b') && dragMode !== 'bl') {
-            h = cropStart.h + dy;
+            h = cropStart.h + ady;
           }
           // Edge handles (tm/bm/ml/mr) intentionally do not enforce aspectRatio
           if (dragMode === 'tm') {
-            y = cropStart.y + dy;
-            h = cropStart.h - dy;
+            y = cropStart.y + ady;
+            h = cropStart.h - ady;
           }
           if (dragMode === 'bm') {
-            h = cropStart.h + dy;
+            h = cropStart.h + ady;
           }
           if (dragMode === 'ml') {
-            x = cropStart.x + dx;
-            w = cropStart.w - dx;
+            x = cropStart.x + adx;
+            w = cropStart.w - adx;
           }
           if (dragMode === 'mr') {
-            w = cropStart.w + dx;
+            w = cropStart.w + adx;
           }
 
           if (w < 1) {
@@ -2272,6 +2285,38 @@
         clampCrop();
         updateInputs();
         updateCropBoxVisual();
+        pushHistory();
+      });
+
+      // Rotation handle drag
+      const rotHandleEl = document.getElementById('rotation-handle');
+
+      rotHandleEl.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        rotHandleEl.setPointerCapture(e.pointerId);
+        rotDragActive = true;
+        const rect = previewImg.getBoundingClientRect();
+        const cx = rect.left + activeCrop.x * zoom + (activeCrop.w * zoom) / 2;
+        const cy = rect.top + activeCrop.y * zoom + (activeCrop.h * zoom) / 2;
+        rotCenter = { x: cx, y: cy };
+        rotDragStartAngle = Math.atan2(e.clientY - cy, e.clientX - cx) * (180 / Math.PI);
+        rotDragStartRotation = cropRotation;
+      });
+
+      rotHandleEl.addEventListener('pointermove', (e) => {
+        if (!rotDragActive) return;
+        const angle = Math.atan2(e.clientY - rotCenter.y, e.clientX - rotCenter.x) * (180 / Math.PI);
+        let newRot = rotDragStartRotation + (angle - rotDragStartAngle);
+        newRot = Math.max(-180, Math.min(180, newRot));
+        if (Math.abs(newRot) < 2) newRot = 0; // snap to level
+        cropRotation = newRot;
+        syncRotationUI();
+        updateCropBoxVisual();
+      });
+
+      rotHandleEl.addEventListener('pointerup', () => {
+        if (!rotDragActive) return;
+        rotDragActive = false;
         pushHistory();
       });
 
@@ -2893,6 +2938,31 @@
         flipVBtn.style.color = flipV ? 'var(--accent)' : '';
         flipVBtn.style.borderColor = flipV ? 'var(--accent)' : '';
         applyFlipPreview();
+      });
+
+      const rotationInput = document.getElementById('rotation-input');
+      const rotationSlider = document.getElementById('rotation-slider');
+      const rotationResetBtn = document.getElementById('rotation-reset-btn');
+
+      rotationInput.addEventListener('input', () => {
+        cropRotation = Math.max(-180, Math.min(180, parseFloat(rotationInput.value) || 0));
+        rotationSlider.value = cropRotation;
+        updateCropBoxVisual();
+      });
+      rotationInput.addEventListener('change', pushHistory);
+
+      rotationSlider.addEventListener('input', () => {
+        cropRotation = parseFloat(rotationSlider.value);
+        rotationInput.value = cropRotation.toFixed(1);
+        updateCropBoxVisual();
+      });
+      rotationSlider.addEventListener('change', pushHistory);
+
+      rotationResetBtn.addEventListener('click', () => {
+        cropRotation = 0;
+        syncRotationUI();
+        updateCropBoxVisual();
+        pushHistory();
       });
 
       function applyGridClasses() {

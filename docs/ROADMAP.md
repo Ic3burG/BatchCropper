@@ -81,11 +81,11 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 - [x] **Golden Ratio Grid Overlay**: Alternative to rule-of-thirds, togglable alongside existing grid
 - [x] **Crop Comparison View**: Side-by-side before/after preview within the canvas
-- **Rotation Handle**: Deferred to v1.8
+- [x] **Rotation Handle**: Deferred to v1.8 (complete)
 
-### v1.8 — Rotation
+### v1.8 — Rotation (Complete)
 
-- **Rotation Handle**: Rotate the crop box (not the image) before export using canvas transform
+- [x] **Rotation Handle**: Rotate the crop box (not the image) before export using canvas transform
 
 ### v2.0 — New Paradigm (Breaking Changes)
 

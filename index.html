@@ -2160,7 +2160,22 @@
           const rh = crop.h * scale;
           const rx = (cw - rw) / 2;
           const ry = (ch - rh) / 2;
-          ctx.drawImage(previewImg, crop.x, crop.y, crop.w, crop.h, rx, ry, rw, rh);
+          if (cropRotation !== 0) {
+            const rad = -(cropRotation * Math.PI) / 180;
+            ctx.save();
+            ctx.translate(rx + rw / 2, ry + rh / 2);
+            ctx.rotate(rad);
+            ctx.drawImage(
+              previewImg,
+              -(crop.x + crop.w / 2),
+              -(crop.y + crop.h / 2),
+              previewImg.naturalWidth,
+              previewImg.naturalHeight
+            );
+            ctx.restore();
+          } else {
+            ctx.drawImage(previewImg, crop.x, crop.y, crop.w, crop.h, rx, ry, rw, rh);
+          }
         } else {
           ctx.fillStyle = 'rgba(255,255,255,0.3)';
           ctx.font = '13px sans-serif';

@@ -219,6 +219,32 @@
         display: none;
       }
 
+      #rotation-handle {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: var(--accent, #f5c518);
+        border: 2px solid rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        cursor: grab;
+        z-index: 12;
+        display: none;
+      }
+      #rotation-handle:active {
+        cursor: grabbing;
+      }
+      #rotation-stem {
+        position: absolute;
+        width: 2px;
+        background: var(--accent, #f5c518);
+        opacity: 0.7;
+        transform-origin: bottom center;
+        z-index: 11;
+        display: none;
+        pointer-events: none;
+      }
+
       /* Grid overlays — toggled via CSS classes on #crop-box */
       #crop-box::before,
       #crop-box::after {
@@ -736,6 +762,8 @@
                 <div class="handle bm" data-handle="bm"></div>
                 <div class="handle br" data-handle="br"></div>
               </div>
+              <div id="rotation-handle" title="Drag to rotate crop"></div>
+              <div id="rotation-stem"></div>
             </div>
           </div>
           <div id="compare-panel">
@@ -867,6 +895,59 @@
                     />
                   </span>
                 </div>
+              </div>
+            </div>
+            <div style="margin-bottom: 8px">
+              <label
+                style="
+                  display: block;
+                  font-family: var(--mono);
+                  font-size: 11px;
+                  color: var(--text-dim);
+                  margin-bottom: 4px;
+                "
+                >Rotation</label
+              >
+              <div style="display: flex; gap: 6px; align-items: center">
+                <input
+                  type="number"
+                  id="rotation-input"
+                  value="0"
+                  min="-180"
+                  max="180"
+                  step="0.1"
+                  style="
+                    width: 58px;
+                    background: var(--surface2);
+                    border: 1px solid var(--border);
+                    color: var(--text);
+                    font-family: var(--mono);
+                    font-size: 12px;
+                    padding: 4px 6px;
+                    outline: none;
+                    border-radius: 2px;
+                  "
+                />
+                <span style="font-family: var(--mono); font-size: 11px; color: var(--text-dim)"
+                  >°</span
+                >
+                <input
+                  type="range"
+                  id="rotation-slider"
+                  min="-180"
+                  max="180"
+                  step="0.5"
+                  value="0"
+                  style="flex: 1"
+                />
+                <button
+                  class="btn btn-ghost"
+                  id="rotation-reset-btn"
+                  style="padding: 2px 7px; font-size: 13px"
+                  title="Reset rotation"
+                >
+                  ⟳
+                </button>
               </div>
             </div>
             <button class="btn btn-ghost btn-full" id="reset-crop">Reset Selection</button>
@@ -1372,6 +1453,7 @@
       let swipeStartY = 0;
       let flipH = false;
       let flipV = false;
+      let cropRotation = 0; // degrees, -180 to +180
       let cropMode = 'px'; // 'px' | 'pct'
       let userPresets = []; // [{name, x, y, w, h}, ...]
       let sortOrder = 'none';
@@ -1611,6 +1693,8 @@
         historyIndex = -1;
         Object.assign(batchCrop, { x: 0, y: 0, w: 0, h: 0 });
         activeCrop = batchCrop;
+        cropRotation = 0;
+        previewImg.style.opacity = '';
         renderFileList();
 
         // Reset UI
@@ -1928,10 +2012,21 @@
         }
       }
 
+      function syncRotationUI() {
+        const inp = document.getElementById('rotation-input');
+        const sld = document.getElementById('rotation-slider');
+        if (inp) inp.value = cropRotation.toFixed(1);
+        if (sld) sld.value = cropRotation;
+        // Keep batchCrop rotation in sync for export
+        if (activeCrop === batchCrop) batchCrop.rotation = cropRotation;
+      }
+
       function updateCropBoxVisual() {
         if (!activeCrop.w || !activeCrop.h) {
           cropBox.style.display = 'none';
           cropOverlay.innerHTML = '';
+          document.getElementById('rotation-handle').style.display = 'none';
+          document.getElementById('rotation-stem').style.display = 'none';
           return;
         }
         cropBox.style.display = 'block';
@@ -1943,17 +2038,77 @@
         cropBox.style.top = sy + 'px';
         cropBox.style.width = sw + 'px';
         cropBox.style.height = sh + 'px';
+        cropBox.style.transform = `rotate(${cropRotation}deg)`;
+
+        const _rh = document.getElementById('rotation-handle');
+        const _rs = document.getElementById('rotation-stem');
+        const stemH = 28;
+        _rh.style.display = 'block';
+        _rh.style.left = sx + sw / 2 + 'px';
+        _rh.style.top = sy - stemH + 'px';
+        _rs.style.display = 'block';
+        _rs.style.left = sx + sw / 2 - 1 + 'px';
+        _rs.style.top = sy - stemH + 'px';
+        _rs.style.height = stemH + 'px';
+        _rs.style.transform = `rotate(${cropRotation}deg)`;
+        _rs.style.transformOrigin = `1px ${stemH}px`;
 
         const iw = imgNatW * zoom;
         const ih = imgNatH * zoom;
-        cropOverlay.innerHTML = `
-    <div class="mask-top" style="left:0;top:0;width:${iw}px;height:${sy}px;"></div>
-    <div class="mask-bottom" style="left:0;top:${sy + sh}px;width:${iw}px;height:${ih - sy - sh}px;"></div>
-    <div class="mask-left" style="left:0;top:${sy}px;width:${sx}px;height:${sh}px;"></div>
-    <div class="mask-right" style="left:${sx + sw}px;top:${sy}px;width:${iw - sx - sw}px;height:${sh}px;"></div>
-  `;
+        if (cropRotation !== 0) {
+          cropOverlay.innerHTML = '';
+          previewImg.style.opacity = '0.55';
+        } else {
+          previewImg.style.opacity = '';
+          // All values are computed numbers — no user input, XSS-safe
+          cropOverlay.innerHTML =
+            '<div class="mask-top" style="left:0;top:0;width:' +
+            iw +
+            'px;height:' +
+            sy +
+            'px;"></div>' +
+            '<div class="mask-bottom" style="left:0;top:' +
+            (sy + sh) +
+            'px;width:' +
+            iw +
+            'px;height:' +
+            (ih - sy - sh) +
+            'px;"></div>' +
+            '<div class="mask-left" style="left:0;top:' +
+            sy +
+            'px;width:' +
+            sx +
+            'px;height:' +
+            sh +
+            'px;"></div>' +
+            '<div class="mask-right" style="left:' +
+            (sx + sw) +
+            'px;top:' +
+            sy +
+            'px;width:' +
+            (iw - sx - sw) +
+            'px;height:' +
+            sh +
+            'px;"></div>';
+        }
 
-        coordsDisplay.innerHTML = `<span>${Math.round(activeCrop.x)}, ${Math.round(activeCrop.y)}</span> &nbsp; <span>${Math.round(activeCrop.w)} × ${Math.round(activeCrop.h)}</span>`;
+        const rotStr =
+          cropRotation !== 0
+            ? ' &nbsp; <span>R: ' + cropRotation.toFixed(1) + '&deg;</span>'
+            : '';
+        coordsDisplay.innerHTML =
+          '<span>' +
+          Math.round(activeCrop.x) +
+          ', ' +
+          Math.round(activeCrop.y) +
+          '</span>' +
+          ' &nbsp; ' +
+          '<span>' +
+          Math.round(activeCrop.w) +
+          ' &times; ' +
+          Math.round(activeCrop.h) +
+          '</span>' +
+          rotStr;
         if (compareMode) renderCompare();
       }
 

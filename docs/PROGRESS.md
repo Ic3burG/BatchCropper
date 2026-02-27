@@ -226,3 +226,20 @@
 - Manual test checklist (from plan): draw, rotate via drag/input/slider, undo, file switch, reset, export ZIP/single/clipboard, compare view — all verified against plan specification
 
 **Status:** ✅ v1.8 rotation handle fully implemented and committed to `main`.
+
+---
+
+## Session: February 27, 2026 (Roadmap Expansion)
+
+### 🔮 v2.0 Roadmap Fleshing & Specification
+
+**Goal:** Expand the high-level v2.0 vision into specific, actionable minor releases (v2.0–v2.2) in `docs/ROADMAP.md`.
+
+**Changes Made:**
+
+- **v2.0 — Sessions & Persistence**: Added specific items for JSON session export/import, file re-linking (matching name/size), IndexedDB auto-save, and multi-selection UI.
+- **v2.1 — Scripted Workflow**: Detailed the expression language (e.g., `center(1:1)`), dynamic batch variables (`w`, `h`, `aspect`), conditional logic based on image orientation, and bulk metadata scripting.
+- **v2.2 — Distribution & Native**: Added PWA/Service Worker offline support, native desktop shell (Electron/NeutralinoJS) for folder access, and system-level "Open With" integration.
+- Updated `docs/ROADMAP.md` to use the minor version checkbox structure consistent with the v1.x series.
+
+**Status:** ✅ v2.x roadmap detailed and committed.

@@ -87,14 +87,31 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 - [x] **Rotation Handle**: Rotate the crop box (not the image) before export using canvas transform
 
-### v2.0 — New Paradigm (Breaking Changes)
+### v2.0 — Sessions & Persistence
 
-These ideas change the mental model of the tool and warrant a major version bump:
+This version introduces stateful sessions as a first-class concept, allowing users to pause and resume large batch jobs.
 
-- **Session Save/Restore**: Export current file list + crop settings as a `.json` file and reload it later — introduces stateful sessions as a first-class concept
-- **Scripted Crop Rules**: A small expression language (e.g., `center(1:1)`, `top(16:9)`) for describing crops programmatically, applied to the whole batch; moves BatchCropper from visual-first to scripted-first for power users
-- **PWA / Offline Mode**: Package as a Progressive Web App for offline use
-- **Electron Wrapper**: Native desktop app with folder-level batch processing
+- [ ] **Session Export/Import**: Download a `.json` "Session File" containing all current file names, metadata, crop coordinates, rotations, and export settings.
+- [ ] **Intelligent File Re-linking**: A guided UI to "Reconnect Files" when loading a session, matching local files by name and size to restore the workspace pointers.
+- [ ] **Project Auto-Save**: Periodically backup the active session to `IndexedDB` or `localStorage` to prevent data loss from accidental refreshes or browser crashes.
+- [ ] **Multi-Selection Sidebar**: Shift-click or Ctrl-click to select multiple files in the sidebar and apply crops or settings to the subset.
+
+### v2.1 — Scripted Workflow
+
+Shifts the tool from purely visual to hybrid-scripted, enabling deterministic results for power users.
+
+- [ ] **Expression Language**: A text-based "Crop Script" bar (e.g., `center(1:1)`, `top(16:9)`, `pad(10%)`) that can be applied to the whole batch.
+- [ ] **Dynamic Batch Variables**: Support for variables like `w` (width), `h` (height), and `aspect` within scripts to allow responsive crops that adapt to different resolutions.
+- [ ] **Conditional Logic**: Apply different scripts automatically based on image orientation or size (e.g., `if (landscape) rule_a else rule_b`).
+- [ ] **Bulk Metadata Editing**: Ability to rename files based on a scriptable pattern or strip/inject specific EXIF tags during export.
+
+### v2.2 — Distribution & Native
+
+Expands the tool's reach beyond the browser tab while maintaining the single-file philosophy where possible.
+
+- [ ] **Offline PWA Support**: Full Progressive Web App manifest and Service Worker integration for 100% offline usage and "Install to Desktop" capability.
+- [ ] **Native Desktop Shell**: A lightweight wrapper (e.g., Electron or NeutralinoJS) to provide a "File > Open Folder" experience and direct local file system write access.
+- [ ] **System Integration**: Register as a system-level "Open With..." handler for image files and folders on supported operating systems.
 
 ---
 

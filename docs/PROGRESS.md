@@ -240,6 +240,10 @@
 - **v2.0 — Sessions & Persistence**: Added specific items for JSON session export/import, file re-linking (matching name/size), IndexedDB auto-save, and multi-selection UI.
 - **v2.1 — Scripted Workflow**: Detailed the expression language (e.g., `center(1:1)`), dynamic batch variables (`w`, `h`, `aspect`), conditional logic based on image orientation, and bulk metadata scripting.
 - **v2.2 — Distribution & Native**: Added PWA/Service Worker offline support, native desktop shell (Electron/NeutralinoJS) for folder access, and system-level "Open With" integration.
+- **v2.3 — Intelligent Content Processing (Local AI)**: Background removal, client-side upscaling, and smart subject tracking.
+- **v2.4 — The "Social Media" Multi-Crop**: Multi-region export from single source and safe zone overlays for social platforms.
+- **v2.5 — Advanced Output & Color**: Layered PSD/TIFF export, batch color correction, and 3D LUT support.
+- **v2.6 — Automation & Extensibility**: Hot-folder monitoring (desktop shell only) and custom JS post-processing hooks.
 - Updated `docs/ROADMAP.md` to use the minor version checkbox structure consistent with the v1.x series.
 
 **Status:** ✅ v2.x roadmap detailed and committed.

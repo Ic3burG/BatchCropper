@@ -105,13 +105,31 @@ Shifts the tool from purely visual to hybrid-scripted, enabling deterministic re
 - [ ] **Conditional Logic**: Apply different scripts automatically based on image orientation or size (e.g., `if (landscape) rule_a else rule_b`).
 - [ ] **Bulk Metadata Editing**: Ability to rename files based on a scriptable pattern or strip/inject specific EXIF tags during export.
 
-### v2.2 — Distribution & Native
+### v2.3 — Intelligent Content Processing (Local AI)
 
-Expands the tool's reach beyond the browser tab while maintaining the single-file philosophy where possible.
+Using client-side libraries like **Transformers.js** (running via WebAssembly/WebGPU), we could add:
 
-- [ ] **Offline PWA Support**: Full Progressive Web App manifest and Service Worker integration for 100% offline usage and "Install to Desktop" capability.
-- [ ] **Native Desktop Shell**: A lightweight wrapper (e.g., Electron or NeutralinoJS) to provide a "File > Open Folder" experience and direct local file system write access.
-- [ ] **System Integration**: Register as a system-level "Open With..." handler for image files and folders on supported operating systems.
+- [ ] **Background Removal**: One-click background removal for "sticker" creation.
+- [ ] **Client-Side Upscaling**: Simple super-resolution to clean up low-res images before cropping.
+- [ ] **Smart Subject Tracking**: Automatically move the crop box to follow the primary subject across a series of similar photos.
+
+### v2.4 — The "Social Media" Multi-Crop
+
+Specialized workflows for cross-platform content creation.
+
+- [ ] **Multi-Region Export**: Define multiple crop regions on a _single_ image and have them all exported as separate files in the ZIP.
+- [ ] **Safe Zone Overlays**: Specialized overlays for Instagram/TikTok UI elements to avoid cropping content into interactive zones.
+
+### v2.5 — Advanced Output & Color
+
+- [ ] **Layered PSD/TIFF Export**: Export a ZIP of layered files where the crop, watermark, and original are on separate layers (via `ag-psd`).
+- [ ] **Batch Color Correction**: Simple sliders for Brightness/Contrast/Saturation that apply to the whole batch.
+- [ ] **LUT Support**: Support for uploading and applying `.cube` (3D LUT) files for cinematic color grading.
+
+### v2.6 — Automation & Extensibility
+
+- [ ] **Hot-Folder Monitoring**: (Requires v2.2 Desktop Shell) Automatically process and export any images dropped into a specific folder.
+- [ ] **Custom Post-Processing Hooks**: Small JavaScript snippet execution on the `CanvasRenderingContext2D` after crop but before export.
 
 ---
 

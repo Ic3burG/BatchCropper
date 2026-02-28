@@ -3066,40 +3066,35 @@
       }
 
       function renderUserPresets() {
-        const container = document.getElementById('user-presets');
-        container.replaceChildren();
-        userPresets.forEach((preset, i) => {
-          const row = document.createElement('div');
-          row.className = 'user-preset-row';
-
-          const applyBtn = document.createElement('button');
-          applyBtn.className = 'apply';
-          applyBtn.textContent = preset.name;
-          applyBtn.title =
-            Math.round(preset.w) +
-            ' x ' +
-            Math.round(preset.h) +
-            ' at (' +
-            Math.round(preset.x) +
-            ', ' +
-            Math.round(preset.y) +
-            ')';
-          applyBtn.addEventListener('click', () => applyUserPreset(preset));
-
-          const delBtn = document.createElement('button');
-          delBtn.className = 'del';
-          delBtn.textContent = '\xd7';
-          delBtn.title = 'Delete preset';
-          delBtn.addEventListener('click', () => {
-            userPresets.splice(i, 1);
-            saveUserPresetsToStorage();
-            renderUserPresets();
+        const sel = document.getElementById('user-preset-select');
+        const delBtn = document.getElementById('delete-preset-btn');
+        // Rebuild options, preserving placeholder
+        while (sel.options.length > 1) sel.remove(1);
+        if (userPresets.length === 0) {
+          sel.options[0].textContent = '— none saved —';
+          sel.disabled = true;
+        } else {
+          sel.options[0].textContent = '— saved —';
+          sel.disabled = false;
+          userPresets.forEach((preset, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.textContent = preset.name;
+            opt.title =
+              Math.round(preset.w) +
+              ' × ' +
+              Math.round(preset.h) +
+              ' at (' +
+              Math.round(preset.x) +
+              ', ' +
+              Math.round(preset.y) +
+              ')';
+            sel.appendChild(opt);
           });
-
-          row.appendChild(applyBtn);
-          row.appendChild(delBtn);
-          container.appendChild(row);
-        });
+        }
+        // Hide delete button whenever list is re-rendered
+        delBtn.style.display = 'none';
+        sel.value = '';
       }
 
       // Populate built-in preset select
@@ -3113,6 +3108,25 @@
       builtinSelect.addEventListener('change', () => {
         applyBuiltInPreset(Number(builtinSelect.value));
         builtinSelect.value = '';
+      });
+
+      // User preset select — apply on change, show delete button
+      const userPresetSel = document.getElementById('user-preset-select');
+      const deletePresetBtn = document.getElementById('delete-preset-btn');
+
+      userPresetSel.addEventListener('change', () => {
+        const idx = Number(userPresetSel.value);
+        if (isNaN(idx) || !userPresets[idx]) return;
+        applyUserPreset(userPresets[idx]);
+        deletePresetBtn.style.display = '';
+      });
+
+      deletePresetBtn.addEventListener('click', () => {
+        const idx = Number(userPresetSel.value);
+        if (isNaN(idx) || !userPresets[idx]) return;
+        userPresets.splice(idx, 1);
+        saveUserPresetsToStorage();
+        renderUserPresets();
       });
 
       // Save current crop as named preset

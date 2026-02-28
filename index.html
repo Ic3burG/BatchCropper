@@ -1016,11 +1016,16 @@
             </button>
           </div>
           <div id="presets-body">
-            <div
-              id="builtin-presets"
-              style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px"
-            ></div>
-            <div style="display: flex; gap: 6px; margin-bottom: 6px">
+            <div class="preset-select-row">
+              <select id="builtin-preset-select" class="preset-select">
+                <option value="" disabled selected>— ratio —</option>
+              </select>
+              <select id="user-preset-select" class="preset-select">
+                <option value="" disabled selected>— saved —</option>
+              </select>
+              <button id="delete-preset-btn" class="preset-delete-btn" title="Delete preset">×</button>
+            </div>
+            <div style="display: flex; gap: 6px; margin-bottom: 4px">
               <input
                 type="text"
                 id="preset-name-input"
@@ -1035,16 +1040,6 @@
                 Save
               </button>
             </div>
-            <div
-              id="user-presets"
-              style="
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-                max-height: 120px;
-                overflow-y: auto;
-              "
-            ></div>
           </div>
         </div>
 

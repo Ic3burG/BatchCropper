@@ -1034,6 +1034,7 @@
             <div class="preset-select-row">
               <select id="builtin-preset-select" class="preset-select">
                 <option value="" disabled selected>— ratio —</option>
+                <option value="free">Free</option>
               </select>
               <select id="user-preset-select" class="preset-select">
                 <option value="" disabled selected>— saved —</option>
@@ -2295,7 +2296,6 @@
           if (dragMode.includes('b') && dragMode !== 'bl') {
             h = cropStart.h + ady;
           }
-          // Edge handles (tm/bm/ml/mr) intentionally do not enforce aspectRatio
           if (dragMode === 'tm') {
             y = cropStart.y + ady;
             h = cropStart.h - ady;
@@ -2318,9 +2318,17 @@
             h = 1;
           }
 
-          // Apply aspect ratio constraint for corner handles
-          if (aspectRatio && ['tl', 'tr', 'bl', 'br'].includes(dragMode)) {
-            h = w / aspectRatio;
+          // Apply aspect ratio constraint for all handles
+          if (aspectRatio) {
+            if (['tl', 'tr', 'bl', 'br'].includes(dragMode)) {
+              h = w / aspectRatio;
+            } else if (dragMode === 'tm' || dragMode === 'bm') {
+              w = h * aspectRatio;
+              x = cropStart.x + (cropStart.w - w) / 2;
+            } else if (dragMode === 'ml' || dragMode === 'mr') {
+              h = w / aspectRatio;
+              y = cropStart.y + (cropStart.h - h) / 2;
+            }
           }
 
           Object.assign(activeCrop, { x, y, w, h });
@@ -3123,6 +3131,12 @@
         builtinSelect.appendChild(opt);
       });
       builtinSelect.addEventListener('change', () => {
+        if (builtinSelect.value === 'free') {
+          ratioSelect.value = 'free';
+          updateAspectRatio();
+          builtinSelect.value = '';
+          return;
+        }
         const preset = BUILTIN_PRESETS[Number(builtinSelect.value)];
         if (!preset) return;
         applyBuiltInPreset(preset.ratio);

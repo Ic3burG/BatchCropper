@@ -3029,12 +3029,12 @@
       const PRESETS_KEY = 'batchcrop_presets';
 
       const BUILTIN_PRESETS = [
-        { name: 'Square 1:1', ratio: 1 },
-        { name: 'Portrait 4:5', ratio: 4 / 5 },
-        { name: 'Story 9:16', ratio: 9 / 16 },
-        { name: 'Landscape 16:9', ratio: 16 / 9 },
-        { name: 'Twitter Header', ratio: 3 / 1 },
-        { name: 'Classic 4:3', ratio: 4 / 3 },
+        { name: 'Square 1:1', ratio: 1, rw: 1, rh: 1 },
+        { name: 'Portrait 4:5', ratio: 4 / 5, rw: 4, rh: 5 },
+        { name: 'Story 9:16', ratio: 9 / 16, rw: 9, rh: 16 },
+        { name: 'Landscape 16:9', ratio: 16 / 9, rw: 16, rh: 9 },
+        { name: 'Twitter Header', ratio: 3 / 1, rw: 3, rh: 1 },
+        { name: 'Classic 4:3', ratio: 4 / 3, rw: 4, rh: 3 },
       ];
 
       function loadUserPresets() {
@@ -3116,15 +3116,20 @@
 
       // Populate built-in preset select
       const builtinSelect = document.getElementById('builtin-preset-select');
-      BUILTIN_PRESETS.forEach((preset) => {
+      BUILTIN_PRESETS.forEach((preset, i) => {
         const opt = document.createElement('option');
-        opt.value = preset.ratio;
+        opt.value = i;
         opt.textContent = preset.name;
         builtinSelect.appendChild(opt);
       });
       builtinSelect.addEventListener('change', () => {
-        applyBuiltInPreset(Number(builtinSelect.value));
-        builtinSelect.value = '';
+        const preset = BUILTIN_PRESETS[Number(builtinSelect.value)];
+        if (!preset) return;
+        applyBuiltInPreset(preset.ratio);
+        ratioW.value = preset.rw;
+        ratioH.value = preset.rh;
+        ratioSelect.value = 'custom';
+        updateAspectRatio();
       });
 
       // User preset select — apply on change, show delete button

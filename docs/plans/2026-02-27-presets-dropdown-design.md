@@ -6,6 +6,7 @@
 ## Problem
 
 The current Presets section feels cluttered. It simultaneously shows:
+
 - A wrapping row of built-in chip buttons
 - A save-named-preset input row
 - A scrollable list of user presets (each with apply + delete buttons)

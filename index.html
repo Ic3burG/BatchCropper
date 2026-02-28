@@ -704,6 +704,21 @@
         border-color: var(--accent2);
         color: var(--accent2);
       }
+      #preset-name-input {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: var(--mono);
+        outline: none;
+        border-radius: 2px;
+        transition: border-color 0.15s;
+      }
+      #preset-name-input::placeholder {
+        color: var(--text-dim);
+      }
+      #preset-name-input:focus {
+        border-color: var(--accent);
+      }
     </style>
   </head>
   <body>

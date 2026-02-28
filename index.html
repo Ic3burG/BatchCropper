@@ -2289,11 +2289,11 @@
           if (dragMode.includes('r')) {
             w = cropStart.w + adx;
           }
-          if (dragMode.includes('t') && dragMode !== 'tr') {
+          if (dragMode.includes('t') && (dragMode !== 'tr' || !aspectRatio)) {
             y = cropStart.y + ady;
             h = cropStart.h - ady;
           }
-          if (dragMode.includes('b') && dragMode !== 'bl') {
+          if (dragMode.includes('b') && (dragMode !== 'bl' || !aspectRatio)) {
             h = cropStart.h + ady;
           }
           if (dragMode === 'tm') {

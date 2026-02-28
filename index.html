@@ -3102,14 +3102,17 @@
         });
       }
 
-      // Render built-in preset chips
-      const builtinContainer = document.getElementById('builtin-presets');
+      // Populate built-in preset select
+      const builtinSelect = document.getElementById('builtin-preset-select');
       BUILTIN_PRESETS.forEach((preset) => {
-        const chip = document.createElement('button');
-        chip.className = 'preset-chip';
-        chip.textContent = preset.name;
-        chip.addEventListener('click', () => applyBuiltInPreset(preset.ratio));
-        builtinContainer.appendChild(chip);
+        const opt = document.createElement('option');
+        opt.value = preset.ratio;
+        opt.textContent = preset.name;
+        builtinSelect.appendChild(opt);
+      });
+      builtinSelect.addEventListener('change', () => {
+        applyBuiltInPreset(Number(builtinSelect.value));
+        builtinSelect.value = '';
       });
 
       // Save current crop as named preset

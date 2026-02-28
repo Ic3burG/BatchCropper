@@ -655,45 +655,41 @@
       input[type='range']:active::-moz-range-thumb {
         background: #ffd060;
       }
-      .preset-chip {
-        font-family: var(--mono);
-        font-size: 10px;
-        padding: 3px 7px;
-        background: var(--surface2);
-        border: 1px solid var(--border);
-        color: var(--text-dim);
-        border-radius: 2px;
-        cursor: pointer;
-        white-space: nowrap;
-      }
-      .preset-chip:hover {
-        border-color: var(--accent);
-        color: var(--text);
-      }
-      .user-preset-row {
+      .preset-select-row {
         display: flex;
-        align-items: center;
         gap: 6px;
+        margin-bottom: 8px;
+        align-items: center;
       }
-      .user-preset-row button.apply {
+      .preset-select {
         flex: 1;
-        text-align: left;
         font-family: var(--mono);
         font-size: 11px;
-        padding: 4px 8px;
+        padding: 4px 24px 4px 8px;
         background: var(--surface2);
         border: 1px solid var(--border);
         color: var(--text);
         border-radius: 2px;
         cursor: pointer;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 8px center;
+        min-width: 0;
       }
-      .user-preset-row button.apply:hover {
+      .preset-select:hover {
         border-color: var(--accent);
       }
-      .user-preset-row button.del {
+      .preset-select:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .preset-select:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .preset-delete-btn {
         flex-shrink: 0;
         padding: 4px 7px;
         font-size: 12px;
@@ -702,8 +698,9 @@
         color: var(--text-dim);
         border-radius: 2px;
         cursor: pointer;
+        display: none;
       }
-      .user-preset-row button.del:hover {
+      .preset-delete-btn:hover {
         border-color: var(--accent2);
         color: var(--accent2);
       }

@@ -666,7 +666,7 @@
         font-family: var(--mono);
         font-size: 11px;
         padding: 4px 24px 4px 8px;
-        background: var(--surface2);
+        background-color: var(--surface2);
         border: 1px solid var(--border);
         color: var(--text);
         border-radius: 2px;
@@ -3115,15 +3115,19 @@
       const deletePresetBtn = document.getElementById('delete-preset-btn');
 
       userPresetSel.addEventListener('change', () => {
-        const idx = Number(userPresetSel.value);
-        if (isNaN(idx) || !userPresets[idx]) return;
+        const val = userPresetSel.value;
+        if (!val) return;
+        const idx = Number(val);
+        if (idx < 0 || idx >= userPresets.length) return;
         applyUserPreset(userPresets[idx]);
         deletePresetBtn.style.display = '';
       });
 
       deletePresetBtn.addEventListener('click', () => {
-        const idx = Number(userPresetSel.value);
-        if (isNaN(idx) || !userPresets[idx]) return;
+        const val = userPresetSel.value;
+        if (!val) return;
+        const idx = Number(val);
+        if (idx < 0 || idx >= userPresets.length) return;
         userPresets.splice(idx, 1);
         saveUserPresetsToStorage();
         renderUserPresets();

@@ -816,6 +816,14 @@
           </div>
           <button
             class="btn btn-ghost"
+            id="ruler-btn"
+            style="padding: 4px 8px; font-size: 11px"
+            title="Toggle Rulers [G]"
+          >
+            📏 Ruler
+          </button>
+          <button
+            class="btn btn-ghost"
             id="compare-btn"
             style="padding: 4px 8px; font-size: 11px; display: none"
             title="Toggle before/after comparison view"
@@ -825,6 +833,9 @@
           <div class="coords" id="coords-display">drag to select crop region</div>
         </div>
         <div class="canvas-body">
+          <div id="ruler-corner" class="ruler-corner"></div>
+          <div id="ruler-top" class="ruler ruler-top"></div>
+          <div id="ruler-left" class="ruler ruler-left"></div>
           <div class="canvas-wrap" id="canvas-wrap">
             <div class="drop-zone" id="drop-zone">
               <div class="drop-zone-icon">⬚</div>
@@ -1562,6 +1573,9 @@
       let showThirdsGrid = true;
       let showGoldenGrid = false;
       let compareMode = false;
+      let globalGuides = { horizontal: [], vertical: [] };
+      let showRulers = true;
+      let isSnappingEnabled = true;
 
       const dropZone = document.getElementById('drop-zone');
       const fileInput = document.getElementById('file-input');
@@ -1570,6 +1584,10 @@
       const comparePanel = document.getElementById('compare-panel');
       const compareCanvas = document.getElementById('compare-canvas');
       const compareBtn = document.getElementById('compare-btn');
+      const rulerBtn = document.getElementById('ruler-btn');
+      const rulerTop = document.getElementById('ruler-top');
+      const rulerLeft = document.getElementById('ruler-left');
+      const rulerCorner = document.getElementById('ruler-corner');
       const cropBox = document.getElementById('crop-box');
       const cropBoxEl = document.getElementById('crop-box');
       const cropOverlay = document.getElementById('crop-overlay');

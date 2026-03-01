@@ -282,19 +282,19 @@
 
 **Commits:**
 
-| Hash      | Description                                                              |
-| --------- | ------------------------------------------------------------------------ |
-| `b1c2563` | `docs: add presets dropdown redesign design doc`                         |
-| `9a85019` | `style: replace preset chip/row CSS with select + delete button styles`  |
-| `69403b2` | `refactor: replace preset chips and list HTML with two select dropdowns` |
-| `4bc821b` | `feat: wire built-in preset select with immediate apply + reset`         |
-| `14da7fd` | `feat: wire user preset select with apply, delete button, disabled state`|
-| `d84d347` | `fix: tighten preset select guards and use background-color shorthand`   |
-| `9fbc24f` | `style: prettier format`                                                 |
-| `bce98a9` | `style: apply dark theme to preset name input`                           |
-| `4956eeb` | `feat: preset select shows name and locks aspect ratio`                  |
-| `9b194f8` | `fix: edge handles respect aspect ratio lock; add Free to preset dropdown`|
-| `373fe9a` | `fix: tr and bl corner handles move freely when no aspect ratio is locked`|
+| Hash      | Description                                                                |
+| --------- | -------------------------------------------------------------------------- |
+| `b1c2563` | `docs: add presets dropdown redesign design doc`                           |
+| `9a85019` | `style: replace preset chip/row CSS with select + delete button styles`    |
+| `69403b2` | `refactor: replace preset chips and list HTML with two select dropdowns`   |
+| `4bc821b` | `feat: wire built-in preset select with immediate apply + reset`           |
+| `14da7fd` | `feat: wire user preset select with apply, delete button, disabled state`  |
+| `d84d347` | `fix: tighten preset select guards and use background-color shorthand`     |
+| `9fbc24f` | `style: prettier format`                                                   |
+| `bce98a9` | `style: apply dark theme to preset name input`                             |
+| `4956eeb` | `feat: preset select shows name and locks aspect ratio`                    |
+| `9b194f8` | `fix: edge handles respect aspect ratio lock; add Free to preset dropdown` |
+| `373fe9a` | `fix: tr and bl corner handles move freely when no aspect ratio is locked` |
 
 **Docs committed:**
 

@@ -87,6 +87,15 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 - [x] **Rotation Handle**: Rotate the crop box (not the image) before export using canvas transform
 
+### v1.5.2 — Preset UI Redesign (Complete)
+
+- [x] **Dropdown Presets UI**: Replaced the chip-button row and scrollable preset list with two compact side-by-side `<select>` dropdowns — one for built-in ratios, one for saved user presets — each applying immediately on selection
+- [x] **Preset Name Shown After Selection**: Built-in dropdown retains the selected preset name instead of resetting to placeholder, providing clear feedback on the active preset
+- [x] **Ratio Lock from Preset**: Selecting a built-in preset simultaneously locks the aspect ratio in the Crop section (sets it to Custom with the preset's exact W:H values)
+- [x] **Free Unlock in Preset Dropdown**: "Free" option in the built-in dropdown unlocks the aspect ratio and resets the dropdown to its placeholder — no need to use the Crop section separately
+- [x] **Edge Handles Respect Ratio Lock**: Vertical edge handles (top/bottom) and horizontal edge handles (left/right) now enforce the locked aspect ratio, matching the behaviour of corner handles; the constrained dimension is recentered automatically
+- [x] **Corner Handle Fix (Free Mode)**: The `tr` and `bl` corner handles now move freely in both axes when no ratio is locked; previously they were stuck to single-axis movement due to an assumption baked in for ratio-locked mode
+
 ### v2.0 — Sessions & Persistence
 
 This version introduces stateful sessions as a first-class concept, allowing users to pause and resume large batch jobs.

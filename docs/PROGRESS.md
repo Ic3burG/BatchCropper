@@ -247,3 +247,59 @@
 - Updated `docs/ROADMAP.md` to use the minor version checkbox structure consistent with the v1.x series.
 
 **Status:** ✅ v2.x roadmap detailed and committed.
+
+---
+
+## Session: February 27, 2026 (Preset UI Redesign)
+
+### 🎛️ BatchCropper v1.5.2 — Preset Section Redesign
+
+**Goal:** Replace the cluttered three-layer Presets section (chip buttons + save row + scrollable preset list) with a clean two-dropdown layout, and connect built-in presets to the aspect ratio lock system.
+
+**Process:** Brainstorm → design doc → writing-plans → subagent-driven development (5 tasks, spec + code quality review per task) → several targeted follow-up fixes.
+
+**Design decisions made:**
+
+- Two side-by-side `<select>` dropdowns: left for built-in ratios, right for saved user presets
+- Built-in dropdown: applies immediately on `change`, retains selected name (no reset to placeholder)
+- User preset dropdown: applies immediately, reveals a `×` delete button; re-renders to placeholder after delete
+- "Free" as a static first option in the built-in dropdown to unlock ratio without visiting the Crop section
+- Built-in preset selection locks the aspect ratio in the Crop section via `updateAspectRatio()` — single source of truth, no duplicated lock logic
+
+**Features implemented:**
+
+- **Dropdown Presets UI** — two compact `<select>` elements replace the chip row and scrollable list; custom CSS chevron via SVG `background-image`, `appearance: none` for cross-browser consistency
+- **Dark theme input** — preset name input (`#preset-name-input`) was unstyled (browser-default white); added `#preset-name-input` CSS rule matching the rest of the dark theme
+- **Ratio lock from preset** — `BUILTIN_PRESETS` extended with `rw`/`rh` integer fields; change handler sets `ratioW`, `ratioH`, `ratioSelect = 'custom'` and calls `updateAspectRatio()` to lock the ratio and show the custom inputs
+- **"Free" option** — static `<option value="free">` in the built-in dropdown; handler branches on this value to set `ratioSelect = 'free'` and call `updateAspectRatio()`, then resets to placeholder
+- **Edge handles enforce ratio** — removed the "intentionally do not enforce aspectRatio" comment; `tm`/`bm` now set `w = h * aspectRatio` and re-center x; `ml`/`mr` now set `h = w / aspectRatio` and re-center y
+- **`tr`/`bl` corner handle fix** — the `dragMode !== 'tr'` and `dragMode !== 'bl'` exceptions in the `t` and `b` conditions were predicated on ratio always being active; changed to `(dragMode !== 'tr' || !aspectRatio)` so these corners move freely in both axes when no ratio is locked
+
+**Bugs caught during review and follow-up:**
+
+- Guard `isNaN(idx) || !userPresets[idx]` was incorrect: `Number('') === 0` would pass the guard and operate on `userPresets[0]`; replaced with explicit `!val` empty-string check + bounds check (`idx < 0 || idx >= userPresets.length`)
+- `.preset-select` used `background:` shorthand before `background-image:` longhands — valid but fragile (reordering would silently break the SVG arrow); changed to `background-color:`
+
+**Commits:**
+
+| Hash      | Description                                                              |
+| --------- | ------------------------------------------------------------------------ |
+| `b1c2563` | `docs: add presets dropdown redesign design doc`                         |
+| `9a85019` | `style: replace preset chip/row CSS with select + delete button styles`  |
+| `69403b2` | `refactor: replace preset chips and list HTML with two select dropdowns` |
+| `4bc821b` | `feat: wire built-in preset select with immediate apply + reset`         |
+| `14da7fd` | `feat: wire user preset select with apply, delete button, disabled state`|
+| `d84d347` | `fix: tighten preset select guards and use background-color shorthand`   |
+| `9fbc24f` | `style: prettier format`                                                 |
+| `bce98a9` | `style: apply dark theme to preset name input`                           |
+| `4956eeb` | `feat: preset select shows name and locks aspect ratio`                  |
+| `9b194f8` | `fix: edge handles respect aspect ratio lock; add Free to preset dropdown`|
+| `373fe9a` | `fix: tr and bl corner handles move freely when no aspect ratio is locked`|
+
+**Docs committed:**
+
+- `docs/plans/2026-02-27-presets-dropdown-design.md` — design spec
+- `docs/plans/2026-02-27-presets-dropdown.md` — implementation plan (5 tasks)
+- `docs/ROADMAP.md` — v1.5.2 marked complete
+
+**Status:** ✅ Preset UI redesign fully implemented, reviewed, and pushed to `main`.

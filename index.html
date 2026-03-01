@@ -2864,8 +2864,101 @@
 
       // Keyboard shortcuts
       document.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+        if (
+          e.target.tagName === 'INPUT' ||
+          e.target.tagName === 'TEXTAREA' ||
+          e.target.tagName === 'SELECT'
+        )
+          return;
+
+        // Undo/Redo
+        const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z';
+        const isRedo =
+          ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') ||
+          ((e.ctrlKey || e.metaKey) && e.key === 'y');
+
+        if (isUndo || isRedo) {
+          e.preventDefault();
+          if (isUndo && historyIndex > 0) {
+            historyIndex--;
+            const snap = cropHistory[historyIndex];
+            Object.assign(activeCrop, snap);
+            cropRotation = snap.rotation ?? 0;
+            syncRotationUI();
+            updateInputs();
+            updateCropBoxVisual();
+          } else if (isRedo && historyIndex < cropHistory.length - 1) {
+            historyIndex++;
+            const snap = cropHistory[historyIndex];
+            Object.assign(activeCrop, snap);
+            cropRotation = snap.rotation ?? 0;
+            syncRotationUI();
+            updateInputs();
+            updateCropBoxVisual();
+          }
+          return;
+        }
+
         if (!imgNatW) return;
+
+        // Navigation
+        if (e.key === '[' && activeIndex > 0) {
+          activeIndex--;
+          showPreview(activeIndex);
+          renderFileList();
+          return;
+        }
+        if (e.key === ']' && activeIndex < files.length - 1) {
+          activeIndex++;
+          showPreview(activeIndex);
+          renderFileList();
+          return;
+        }
+
+        // Toggles
+        if (e.key === 'g' || e.key === 'G') {
+          toggleRulers();
+          return;
+        }
+        if (e.key === 's' || e.key === 'S') {
+          isSnappingEnabled = !isSnappingEnabled;
+          // Visual feedback could be added here if needed
+          return;
+        }
+        if (e.key === 't' || e.key === 'T') {
+          gridThirdsBtn.click();
+          return;
+        }
+        if (e.key === 'l' || e.key === 'L') {
+          gridGoldenBtn.click();
+          return;
+        }
+        if (e.key === 'c' || e.key === 'C') {
+          if (compareBtn.style.display !== 'none') compareBtn.click();
+          return;
+        }
+
+        // Actions
+        if (e.key === 'Enter') {
+          if (e.shiftKey) {
+            if (!downloadActiveBtn.disabled) downloadActiveBtn.click();
+          } else {
+            if (!exportBtn.disabled) exportBtn.click();
+          }
+          return;
+        }
+        if (e.key === '0') {
+          document.getElementById('zoom-fit').click();
+          return;
+        }
+        if (e.key === '+' || e.key === '=') {
+          document.getElementById('zoom-in').click();
+          return;
+        }
+        if (e.key === '-' || e.key === '_') {
+          document.getElementById('zoom-out').click();
+          return;
+        }
 
         const step = e.shiftKey ? 10 : 1;
 
@@ -2897,6 +2990,21 @@
         updateCropBoxVisual();
         if (!e.repeat) pushHistory();
       });
+
+      function toggleRulers() {
+        showRulers = !showRulers;
+        const disp = showRulers ? 'block' : 'none';
+        rulerTop.style.display = disp;
+        rulerLeft.style.display = disp;
+        rulerCorner.style.display = disp;
+        rulerBtn.style.borderColor = showRulers ? 'var(--accent)' : '';
+        rulerBtn.style.color = showRulers ? 'var(--accent)' : '';
+        saveSettings();
+        // Trigger a re-render of rulers if needed (Task 4)
+        if (showRulers && typeof renderRulers === 'function') renderRulers();
+      }
+
+      rulerBtn.addEventListener('click', toggleRulers);
 
       const SETTINGS_KEY = 'batchcrop_settings';
 
@@ -3012,33 +3120,6 @@
           // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}
       }
-
-      document.addEventListener('keydown', (e) => {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-        const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'z';
-        const isRedo =
-          ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'z') ||
-          ((e.ctrlKey || e.metaKey) && e.key === 'y');
-        if (!isUndo && !isRedo) return;
-        e.preventDefault();
-        if (isUndo && historyIndex > 0) {
-          historyIndex--;
-          const snap = cropHistory[historyIndex];
-          Object.assign(activeCrop, snap);
-          cropRotation = snap.rotation ?? 0;
-          syncRotationUI();
-          updateInputs();
-          updateCropBoxVisual();
-        } else if (isRedo && historyIndex < cropHistory.length - 1) {
-          historyIndex++;
-          const snap = cropHistory[historyIndex];
-          Object.assign(activeCrop, snap);
-          cropRotation = snap.rotation ?? 0;
-          syncRotationUI();
-          updateInputs();
-          updateCropBoxVisual();
-        }
-      });
 
       const flipHBtn = document.getElementById('flip-h-btn');
       const flipVBtn = document.getElementById('flip-v-btn');

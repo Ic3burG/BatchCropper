@@ -1789,6 +1789,42 @@
         updateGuides();
       });
 
+      function getSnappedValue(val, axis) {
+        if (!isSnappingEnabled || !imgNatW) return val;
+        const threshold = 10 / zoom;
+        let snappedVal = val;
+        let minDiff = threshold;
+        const guides = axis === 'x' ? globalGuides.vertical : globalGuides.horizontal;
+        const imgSize = axis === 'x' ? imgNatW : imgNatH;
+        [0, imgSize, ...guides].forEach((g) => {
+          const diff = Math.abs(val - g);
+          if (diff < minDiff) {
+            minDiff = diff;
+            snappedVal = g;
+          }
+        });
+        return snappedVal;
+      }
+
+      function updateGuideSnaps() {
+        document.querySelectorAll('.guide').forEach((g) => g.classList.remove('snapped'));
+        if (!isSnappingEnabled || !imgNatW) return;
+        const threshold = 0.01;
+        const check = (val, axis) => {
+          const guides = axis === 'h' ? globalGuides.horizontal : globalGuides.vertical;
+          guides.forEach((g, i) => {
+            if (Math.abs(val - g) < threshold) {
+              const el = document.querySelector(`.guide[data-axis="${axis}"][data-index="${i}"]`);
+              if (el) el.classList.add('snapped');
+            }
+          });
+        };
+        check(activeCrop.y, 'h');
+        check(activeCrop.y + activeCrop.h, 'h');
+        check(activeCrop.x, 'v');
+        check(activeCrop.x + activeCrop.w, 'v');
+      }
+
       const rulerBtn = document.getElementById('ruler-btn');
       const rulerTop = document.getElementById('ruler-top');
       const rulerLeft = document.getElementById('ruler-left');
@@ -2454,6 +2490,7 @@
           '</span>' +
           rotStr;
         if (compareMode) renderCompare();
+        updateGuideSnaps();
       }
 
       function renderCompare() {
@@ -2577,46 +2614,63 @@
           if (aspectRatio) h = w / aspectRatio;
           Object.assign(activeCrop, { x, y, w, h });
         } else if (dragMode === 'move') {
-          activeCrop.x = Math.max(0, Math.min(cropStart.x + adx, imgNatW - cropStart.w));
-          activeCrop.y = Math.max(0, Math.min(cropStart.y + ady, imgNatH - cropStart.h));
+          let nx = cropStart.x + adx;
+          let ny = cropStart.y + ady;
+
+          // Snap left or right edge
+          const snapL = getSnappedValue(nx, 'x');
+          const snapR = getSnappedValue(nx + cropStart.w, 'x') - cropStart.w;
+          if (Math.abs(snapL - nx) < Math.abs(snapR - nx)) {
+            nx = snapL;
+          } else if (Math.abs(snapR - nx) < 10 / zoom) {
+            nx = snapR;
+          }
+
+          // Snap top or bottom edge
+          const snapT = getSnappedValue(ny, 'y');
+          const snapB = getSnappedValue(ny + cropStart.h, 'y') - cropStart.h;
+          if (Math.abs(snapT - ny) < Math.abs(snapB - ny)) {
+            ny = snapT;
+          } else if (Math.abs(snapB - ny) < 10 / zoom) {
+            ny = snapB;
+          }
+
+          activeCrop.x = nx;
+          activeCrop.y = ny;
         } else {
           let { x, y, w, h } = cropStart;
 
           if (dragMode.includes('l')) {
-            x = cropStart.x + adx;
-            w = cropStart.w - adx;
+            x = getSnappedValue(cropStart.x + adx, 'x');
+            w = cropStart.x + cropStart.w - x;
           }
           if (dragMode.includes('r')) {
-            w = cropStart.w + adx;
+            w = getSnappedValue(cropStart.x + cropStart.w + adx, 'x') - x;
           }
           if (dragMode.includes('t') && (dragMode !== 'tr' || !aspectRatio)) {
-            y = cropStart.y + ady;
-            h = cropStart.h - ady;
+            y = getSnappedValue(cropStart.y + ady, 'y');
+            h = cropStart.y + cropStart.h - y;
           }
           if (dragMode.includes('b') && (dragMode !== 'bl' || !aspectRatio)) {
-            h = cropStart.h + ady;
+            h = getSnappedValue(cropStart.y + cropStart.h + ady, 'y') - y;
           }
           if (dragMode === 'tm') {
-            y = cropStart.y + ady;
-            h = cropStart.h - ady;
+            y = getSnappedValue(cropStart.y + ady, 'y');
+            h = cropStart.y + cropStart.h - y;
           }
           if (dragMode === 'bm') {
-            h = cropStart.h + ady;
+            h = getSnappedValue(cropStart.y + cropStart.h + ady, 'y') - y;
           }
           if (dragMode === 'ml') {
-            x = cropStart.x + adx;
-            w = cropStart.w - adx;
+            x = getSnappedValue(cropStart.x + adx, 'x');
+            w = cropStart.x + cropStart.w - x;
           }
           if (dragMode === 'mr') {
-            w = cropStart.w + adx;
+            w = getSnappedValue(cropStart.x + cropStart.w + adx, 'x') - x;
           }
 
-          if (w < 1) {
-            w = 1;
-          }
-          if (h < 1) {
-            h = 1;
-          }
+          if (w < 1) w = 1;
+          if (h < 1) h = 1;
 
           // Apply aspect ratio constraint for all handles
           if (aspectRatio) {

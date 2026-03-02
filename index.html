@@ -807,10 +807,19 @@
       <div class="canvas-area">
         <div class="canvas-toolbar">
           <div class="zoom-controls">
-            <button class="btn btn-ghost" id="zoom-out" style="padding: 4px 8px">−</button>
+            <button class="btn btn-ghost" id="zoom-out" style="padding: 4px 8px" data-shortcut="-">
+              −
+            </button>
             <span class="zoom-val" id="zoom-label">100%</span>
-            <button class="btn btn-ghost" id="zoom-in" style="padding: 4px 8px">+</button>
-            <button class="btn btn-ghost" id="zoom-fit" style="padding: 4px 8px; font-size: 10px">
+            <button class="btn btn-ghost" id="zoom-in" style="padding: 4px 8px" data-shortcut="+">
+              +
+            </button>
+            <button
+              class="btn btn-ghost"
+              id="zoom-fit"
+              style="padding: 4px 8px; font-size: 10px"
+              data-shortcut="0"
+            >
               Fit
             </button>
           </div>
@@ -819,6 +828,7 @@
             id="ruler-btn"
             style="padding: 4px 8px; font-size: 11px"
             title="Toggle Rulers [G]"
+            data-shortcut="G"
           >
             📏 Ruler
           </button>
@@ -827,6 +837,7 @@
             id="compare-btn"
             style="padding: 4px 8px; font-size: 11px; display: none"
             title="Toggle before/after comparison view"
+            data-shortcut="C"
           >
             ◫ Compare
           </button>
@@ -1054,7 +1065,9 @@
                 </button>
               </div>
             </div>
-            <button class="btn btn-ghost btn-full" id="reset-crop">Reset Selection</button>
+            <button class="btn btn-ghost btn-full" id="reset-crop" data-shortcut="R">
+              Reset Selection
+            </button>
             <button class="btn btn-ghost btn-full" id="save-override" style="margin-top: 4px">
               Save crop for this file
             </button>
@@ -1089,6 +1102,7 @@
                 id="grid-thirds-btn"
                 style="flex: 1; font-size: 11px; font-family: var(--mono)"
                 title="Toggle rule-of-thirds grid"
+                data-shortcut="T"
               >
                 ⊞ ⅓
               </button>
@@ -1096,6 +1110,7 @@
                 class="btn btn-ghost"
                 id="grid-golden-btn"
                 style="flex: 1; font-size: 11px; font-family: var(--mono)"
+                data-shortcut="L"
               >
                 ⊞ φ
               </button>
@@ -1445,6 +1460,7 @@
               id="download-active-btn"
               disabled
               style="margin-bottom: 8px"
+              data-shortcut="Shift+Enter"
             >
               ▼ Download Active File
             </button>
@@ -1456,7 +1472,7 @@
             >
               ⧉ Copy to Clipboard
             </button>
-            <button class="btn btn-primary btn-full" id="export-btn" disabled>
+            <button class="btn btn-primary btn-full" id="export-btn" disabled data-shortcut="Enter">
               ▼ Download All Cropped
             </button>
             <div class="progress-bar" id="progress-bar" style="display: none">
@@ -3270,6 +3286,30 @@
 
       rulerBtn.addEventListener('click', toggleRulers);
 
+      // Shortcut tooltips
+      const tooltip = document.createElement('div');
+      tooltip.className = 'shortcut-tooltip';
+      tooltip.style.display = 'none';
+      document.body.appendChild(tooltip);
+
+      document.addEventListener('mouseover', (e) => {
+        const btn = e.target.closest('[data-shortcut]');
+        if (btn) {
+          tooltip.textContent = btn.dataset.shortcut;
+          tooltip.style.display = 'block';
+          const rect = btn.getBoundingClientRect();
+          tooltip.style.top = rect.bottom + 5 + 'px';
+          tooltip.style.left = rect.left + rect.width / 2 + 'px';
+          tooltip.style.transform = 'translateX(-50%)';
+        }
+      });
+
+      document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('[data-shortcut]')) {
+          tooltip.style.display = 'none';
+        }
+      });
+
       const SETTINGS_KEY = 'batchcrop_settings';
 
       function saveSettings() {
@@ -3299,6 +3339,9 @@
               watermarkFontSize,
               showThirdsGrid,
               showGoldenGrid,
+              showRulers,
+              globalGuides,
+              isSnappingEnabled,
             })
           );
         } catch (_) {}
@@ -3380,6 +3423,21 @@
           }
           if (s.showThirdsGrid != null) showThirdsGrid = s.showThirdsGrid;
           if (s.showGoldenGrid != null) showGoldenGrid = s.showGoldenGrid;
+          if (s.showRulers != null) {
+            showRulers = s.showRulers;
+            const disp = showRulers ? 'block' : 'none';
+            rulerTop.style.display = disp;
+            rulerLeft.style.display = disp;
+            rulerCorner.style.display = disp;
+            rulerBtn.style.borderColor = showRulers ? 'var(--accent)' : '';
+            rulerBtn.style.color = showRulers ? 'var(--accent)' : '';
+          }
+          if (s.globalGuides) {
+            globalGuides = s.globalGuides;
+          }
+          if (s.isSnappingEnabled != null) {
+            isSnappingEnabled = s.isSnappingEnabled;
+          }
           applyGridClasses();
           // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}

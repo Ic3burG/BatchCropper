@@ -915,24 +915,31 @@
             "
           >
             <h2 style="margin-bottom: 0">Crop</h2>
-            <div style="display: flex; gap: 4px; align-items: center">
+            <button
+              class="btn btn-ghost"
+              id="crop-collapse-btn"
+              style="padding: 2px 8px; font-size: 10px; font-family: var(--mono)"
+            >
+              ▾
+            </button>
+          </div>
+          <div id="crop-body">
+            <div style="display: flex; gap: 4px; margin-bottom: 8px">
               <button
                 class="btn btn-ghost"
-                id="crop-mode-btn"
-                style="padding: 2px 8px; font-size: 10px; font-family: var(--mono)"
+                id="crop-mode-px"
+                style="flex: 1; font-size: 11px; font-family: var(--mono)"
               >
                 px
               </button>
               <button
                 class="btn btn-ghost"
-                id="crop-collapse-btn"
-                style="padding: 2px 8px; font-size: 10px; font-family: var(--mono)"
+                id="crop-mode-pct"
+                style="flex: 1; font-size: 11px; font-family: var(--mono)"
               >
-                ▾
+                %
               </button>
             </div>
-          </div>
-          <div id="crop-body">
             <div class="input-grid">
               <div class="input-group">
                 <label>X</label>
@@ -3341,6 +3348,7 @@
               showRulers,
               globalGuides,
               isSnappingEnabled,
+              cropMode,
             })
           );
         } catch (_) {}
@@ -3437,6 +3445,9 @@
           if (s.isSnappingEnabled != null) {
             isSnappingEnabled = s.isSnappingEnabled;
           }
+          if (s.cropMode === 'px' || s.cropMode === 'pct') {
+            cropMode = s.cropMode;
+          }
           applyGridClasses();
           // NOTE: if flipH/flipV are ever persisted, call applyFlipPreview() here
         } catch (_) {}
@@ -3519,14 +3530,32 @@
         if (compareMode) renderCompare();
       });
 
-      const cropModeBtn = document.getElementById('crop-mode-btn');
+      const cropModePxBtn = document.getElementById('crop-mode-px');
+      const cropModePctBtn = document.getElementById('crop-mode-pct');
       const cropInputEls = [inX, inY, inW, inH];
 
-      cropModeBtn.addEventListener('click', () => {
-        cropMode = cropMode === 'px' ? 'pct' : 'px';
-        cropModeBtn.textContent = cropMode === 'pct' ? '%' : 'px';
+      function updateCropModeUI() {
+        cropModePxBtn.style.background = cropMode === 'px' ? 'var(--accent)' : '';
+        cropModePxBtn.style.color = cropMode === 'px' ? 'var(--bg)' : '';
+        cropModePctBtn.style.background = cropMode === 'pct' ? 'var(--accent)' : '';
+        cropModePctBtn.style.color = cropMode === 'pct' ? 'var(--bg)' : '';
         cropInputEls.forEach((el) => (el.step = cropMode === 'pct' ? '0.1' : '1'));
+      }
+
+      cropModePxBtn.addEventListener('click', () => {
+        if (cropMode === 'px') return;
+        cropMode = 'px';
+        updateCropModeUI();
         updateInputs();
+        saveSettings();
+      });
+
+      cropModePctBtn.addEventListener('click', () => {
+        if (cropMode === 'pct') return;
+        cropMode = 'pct';
+        updateCropModeUI();
+        updateInputs();
+        saveSettings();
       });
 
       // ── Presets ──────────────────────────────────────────────
@@ -3796,6 +3825,7 @@
       });
 
       loadSettings();
+      updateCropModeUI();
       initCollapsible('crop-collapse-btn', 'crop-body', 'crop');
       initCollapsible('export-collapse-btn', 'export-body', 'export');
       initCollapsible('presets-toggle', 'presets-body', 'presets');

@@ -42,6 +42,7 @@ Give both Watermark and Resize a `border-top` divider and a sub-header row (labe
 **Canvas toolbar:** `[Zoom] [Ruler] [⊞ ⅓] [⊞ φ] [Compare] [coords]`
 
 **Crop section:**
+
 ```
 [Crop]                              [▾]
 [px] [%]
@@ -55,6 +56,7 @@ Rotation [___°] [slider] [⟳]
 ```
 
 **Export section:**
+
 ```
 [Export]                            [▾]
 [⇄ Flip H] [⇅ Flip V]
@@ -72,6 +74,7 @@ Filename [___]
 ```
 
 **Sidebar footer (always visible):**
+
 ```
 [▼ Download Active File]
 [⧉ Copy to Clipboard]

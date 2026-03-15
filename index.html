@@ -1093,15 +1093,8 @@
             <button class="btn btn-ghost btn-full" id="reset-crop" data-shortcut="R">
               Reset Selection
             </button>
-            <button class="btn btn-ghost btn-full" id="save-override" style="margin-top: 4px">
-              Save crop for this file
-            </button>
-            <button
-              class="btn btn-ghost btn-full"
-              id="clear-override"
-              style="margin-top: 4px; display: none"
-            >
-              Clear file override
+            <button class="btn btn-ghost btn-full" id="override-btn" style="margin-top: 4px">
+              Save Override
             </button>
             <button
               class="btn btn-ghost btn-full"
@@ -2090,7 +2083,9 @@
 
       function updateOverrideButtons() {
         const hasOverride = !!files[activeIndex]?.crop;
-        document.getElementById('clear-override').style.display = hasOverride ? 'block' : 'none';
+        const btn = document.getElementById('override-btn');
+        btn.textContent = hasOverride ? 'Clear Override' : 'Save Override';
+        btn.style.color = hasOverride ? 'var(--accent)' : '';
       }
 
       function renderFileList() {
@@ -2759,21 +2754,21 @@
         pushHistory();
       });
 
-      // Reset crop
-      document.getElementById('save-override').addEventListener('click', () => {
+      // Per-file crop override: saves current crop or clears existing override
+      document.getElementById('override-btn').addEventListener('click', () => {
         if (!files[activeIndex]) return;
-        if (!activeCrop.w || !activeCrop.h) return; // don't save a zero-area crop
-        files[activeIndex].crop = { ...activeCrop, rotation: cropRotation };
-        activeCrop = files[activeIndex].crop;
-        renderFileList();
-      });
-
-      document.getElementById('clear-override').addEventListener('click', () => {
-        if (!files[activeIndex]) return;
-        files[activeIndex].crop = null;
-        activeCrop = batchCrop;
-        updateInputs();
-        updateCropBoxVisual();
+        const hasOverride = !!files[activeIndex].crop;
+        if (hasOverride) {
+          files[activeIndex].crop = null;
+          activeCrop = batchCrop;
+          updateInputs();
+          updateCropBoxVisual();
+        } else {
+          if (!activeCrop.w || !activeCrop.h) return;
+          files[activeIndex].crop = { ...activeCrop, rotation: cropRotation };
+          activeCrop = files[activeIndex].crop;
+        }
+        updateOverrideButtons();
         renderFileList();
       });
 

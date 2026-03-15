@@ -343,3 +343,37 @@
 - Verified all keyboard shortcuts and hover tooltips.
 
 **Status:** ✅ v1.9 Precision & Shortcuts fully implemented and pushed to `main`.
+
+---
+
+## Session: March 15, 2026 (Sidebar Cleanup & Roadmap Restructure)
+
+### 🧹 Sidebar UX Cleanup
+
+**Goal:** Reduce sidebar clutter by relocating misplaced controls, pinning primary actions, and improving visual hierarchy — without adding new features.
+
+**Changes Made:**
+
+- **Grid toggles → canvas toolbar**: Moved `⊞ ⅓` (rule-of-thirds) and `⊞ φ` (golden ratio) buttons from the bottom of the Crop section body to the canvas toolbar between Ruler and Compare. They are view controls, not crop parameters.
+- **px/% toggle → crop body**: Removed the `px` mode toggle from the Crop section header. Added a `[px] [%]` two-button strip as the first element in the crop body. The Crop header is now symmetric with Presets and Export. JS updated with `updateCropModeUI()`, two separate listeners, and `cropMode` added to `saveSettings`/`loadSettings`.
+- **Single override toggle button**: Replaced the two mutually-exclusive "Save crop for this file" / "Clear file override" buttons with one `#override-btn` that changes label and colour based on state.
+- **Pinned download footer**: Moved the three download buttons, progress bar, and status text out of the collapsible Export section into a permanent `.sidebar-footer` below the file list. Export section is now settings-only; primary actions are always visible.
+- **Watermark & Resize as visual sub-sections**: Added a `.sub-section-header` CSS class (border-top divider, same typographic style as section headers). Both the Watermark and Resize Output blocks now use this treatment inside Export, making the hierarchy explicit.
+
+**Roadmap restructure:**
+
+- Moved Architecture Philosophy to the top of `docs/ROADMAP.md` so it reads as a filter, not a footnote.
+- Renumbered v2.x to fill the gap left by removing out-of-scope features.
+- Added "Beyond the Browser" section for features requiring Transformers.js, `ag-psd`, or desktop shell access.
+
+**Artifacts:**
+
+- `docs/plans/2026-03-14-sidebar-cleanup-design.md` — approved design
+- `docs/plans/2026-03-14-sidebar-cleanup-plan.md` — implementation plan (5 tasks)
+
+**Verification:**
+
+- `npm run format:check` passes ✅
+- All 5 tasks passed spec compliance review and code quality review via subagent-driven development.
+
+**Status:** ✅ Sidebar cleanup fully implemented and pushed to `main`.

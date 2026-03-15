@@ -303,3 +303,43 @@
 - `docs/ROADMAP.md` — v1.5.2 marked complete
 
 **Status:** ✅ Preset UI redesign fully implemented, reviewed, and pushed to `main`.
+
+---
+
+## Session: February 28, 2026 (v1.9 Feature Development)
+
+### 📏 BatchCropper v1.9 — Precision & Shortcuts
+
+**Goal:** Implement professional-grade alignment tools (Rulers and Guides) and a robust, discoverable keyboard shortcut system.
+
+**Changes Made:**
+
+- **Interactive Rulers**: Added `20px` horizontal and vertical rulers to the canvas.
+  - Drawn using `<canvas>` for high performance during zoom/pan.
+  - Show pixel coordinates relative to the original image resolution.
+  - Scale and shift automatically as the user zooms or scrolls the canvas.
+- **Pull-down Guides**: Enabled guide creation by dragging from the rulers.
+  - Horizontal and vertical cyan (#00ffff) guides span the entire workspace.
+  - Guides are **global** (persist across all images in the session).
+  - Deleting guides is as simple as dragging them back into the ruler area.
+- **Snapping System**: Added a "magnetic" snapping behavior (10px threshold).
+  - Both the crop box and individual handles snap to guides and image edges.
+  - Guides glow with the accent color (`--accent`) when a snap occurs to provide visual confirmation.
+  - Snapping can be toggled via the `S` key.
+- **Unified Shortcut System**: Consolidated all shortcuts into a single, clean `keydown` listener.
+  - **Navigation**: `[` and `]` to cycle through files.
+  - **Toggles**: `G` (Rulers), `S` (Snapping), `T`/`L` (Grids), `C` (Compare).
+  - **Actions**: `Enter` (Batch Download), `Shift + Enter` (Single Download), `R` (Reset).
+  - **Zoom**: `+`, `-`, `0` (Fit).
+- **Discoverable Tooltips**: Added custom immediate tooltips that appear on hover for any button with a shortcut (e.g., "Download All `[Enter]`").
+- **Persistence**: Ruler visibility, guide positions, and snapping state are now saved to `localStorage` under the `batchcrop_settings` key.
+
+**Verification:**
+
+- `npm run format:check` passes ✅
+- Verified ruler sync during zoom and scroll.
+- Verified guide creation, movement, and deletion.
+- Verified snapping behavior for both moving the crop box and resizing via handles.
+- Verified all keyboard shortcuts and hover tooltips.
+
+**Status:** ✅ v1.9 Precision & Shortcuts fully implemented and pushed to `main`.

@@ -6,6 +6,19 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 ---
 
+## Architecture Philosophy
+
+BatchCropper is intentionally a **single HTML file** with no build toolchain. This keeps it:
+
+- **Instantly usable** — open and go, no install
+- **Auditable** — all logic is visible in one file
+- **Portable** — works on any device with a modern browser
+- **Privacy-preserving** — no server, no telemetry, no dependencies to audit
+
+Any new features should respect these constraints. Features must use only browser-native APIs or already-included libraries (JSZip). If a feature requires an external library, a build step, or server access, it belongs in a separate project — see [Beyond the Browser](#-beyond-the-browser) below.
+
+---
+
 ## ✅ Completed
 
 ### v1.0 — Core Tool (Complete)
@@ -25,11 +38,7 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 - [x] Drop additional images onto canvas while working
 - [x] Reset crop selection button
 
----
-
-## 📅 Upcoming Features
-
-### v1.1 — Quality of Life
+### v1.1 — Quality of Life (Complete)
 
 - [x] **Aspect Ratio Lock**: Constrain crop to common ratios (1:1, 4:3, 16:9, custom)
 - [x] **Invert Aspect Ratio**: Quickly flip between landscape and portrait orientations (e.g., 16:9 ⇅ 9:16)
@@ -38,21 +47,17 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 - [x] **Per-file Crop Override**: Allow individual files to have a different crop than the batch default
 - [x] **Image Info Display**: Show native resolution and file size in the file list
 
-### v1.2 — Export Enhancements
+### v1.2 — Export Enhancements (Complete)
 
 - [x] **JPEG Quality Slider**: Control compression quality for JPEG/WebP exports
 - [x] **Output Filename Template**: Customizable suffix/prefix for exported filenames (e.g., `_cropped`)
 - [x] **Individual File Download**: Option to download a single file instead of the full ZIP
 
-### v1.3 — UX Polish
+### v1.3 — UX Polish (Complete)
 
 - [x] **Undo/Redo**: Step back through crop region changes
 - [x] **Touch Support**: Basic touch events for tablet use
 - [x] **Persistent Settings**: Remember last-used format and zoom level via `localStorage`
-
----
-
-## 🔮 Future Ideas
 
 ### v1.4 — Crop Intelligence (Complete)
 
@@ -71,6 +76,15 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 - [x] **Collapsible Sections**: Crop, Presets, and Export sections collapse/expand via a shared helper; state persists across reload
 
+### v1.5.2 — Preset UI Redesign (Complete)
+
+- [x] **Dropdown Presets UI**: Replaced the chip-button row and scrollable preset list with two compact side-by-side `<select>` dropdowns — one for built-in ratios, one for saved user presets — each applying immediately on selection
+- [x] **Preset Name Shown After Selection**: Built-in dropdown retains the selected preset name instead of resetting to placeholder, providing clear feedback on the active preset
+- [x] **Ratio Lock from Preset**: Selecting a built-in preset simultaneously locks the aspect ratio in the Crop section (sets it to Custom with the preset's exact W:H values)
+- [x] **Free Unlock in Preset Dropdown**: "Free" option in the built-in dropdown unlocks the aspect ratio and resets the dropdown to its placeholder — no need to use the Crop section separately
+- [x] **Edge Handles Respect Ratio Lock**: Vertical edge handles (top/bottom) and horizontal edge handles (left/right) now enforce the locked aspect ratio, matching the behaviour of corner handles; the constrained dimension is recentered automatically
+- [x] **Corner Handle Fix (Free Mode)**: The `tr` and `bl` corner handles now move freely in both axes when no ratio is locked; previously they were stuck to single-axis movement due to an assumption baked in for ratio-locked mode
+
 ### v1.6 — Export Enhancements (Complete)
 
 - [x] **AVIF Format Support**: Add `image/avif` as an export format — natively supported by Canvas API in Chrome/Firefox, no new dependency needed
@@ -87,68 +101,74 @@ BatchCropper is a **stable, single-file web tool** for batch image cropping. It 
 
 - [x] **Rotation Handle**: Rotate the crop box (not the image) before export using canvas transform
 
-### v1.5.2 — Preset UI Redesign (Complete)
+### v1.9 — Precision & Shortcuts (Complete)
 
-- [x] **Dropdown Presets UI**: Replaced the chip-button row and scrollable preset list with two compact side-by-side `<select>` dropdowns — one for built-in ratios, one for saved user presets — each applying immediately on selection
-- [x] **Preset Name Shown After Selection**: Built-in dropdown retains the selected preset name instead of resetting to placeholder, providing clear feedback on the active preset
-- [x] **Ratio Lock from Preset**: Selecting a built-in preset simultaneously locks the aspect ratio in the Crop section (sets it to Custom with the preset's exact W:H values)
-- [x] **Free Unlock in Preset Dropdown**: "Free" option in the built-in dropdown unlocks the aspect ratio and resets the dropdown to its placeholder — no need to use the Crop section separately
-- [x] **Edge Handles Respect Ratio Lock**: Vertical edge handles (top/bottom) and horizontal edge handles (left/right) now enforce the locked aspect ratio, matching the behaviour of corner handles; the constrained dimension is recentered automatically
-- [x] **Corner Handle Fix (Free Mode)**: The `tr` and `bl` corner handles now move freely in both axes when no ratio is locked; previously they were stuck to single-axis movement due to an assumption baked in for ratio-locked mode
+- [x] **Interactive Rulers**: Added top and left pixel-based rulers that stay in sync with image zoom and pan; provides immediate visual feedback on coordinates
+- [x] **Pull-down Guides**: Users can drag from either ruler to create horizontal or vertical guides; guides are global across the batch for consistent alignment
+- [x] **Guide Snapping**: The crop box and its handles "snap" to guides and image edges (10px threshold) for pixel-perfect positioning; guides glow when snapped
+- [x] **Comprehensive Keyboard Shortcuts**: Consolidated all shortcuts into a single robust system; added `[`/`]` for navigation, `G`/`S` for UI toggles, `Enter` for export, and `+`/`-`/`0` for zoom
+- [x] **Shortcut Tooltips**: Custom immediate tooltips appear on hover over buttons with associated shortcuts, improving discoverability without needing a help menu
+- [x] **Persistence**: Guide positions, ruler visibility, and snapping state are persisted in `localStorage` across sessions
+
+---
+
+## 📅 Upcoming Features
 
 ### v2.0 — Sessions & Persistence
 
-This version introduces stateful sessions as a first-class concept, allowing users to pause and resume large batch jobs.
+Introduces stateful sessions as a first-class concept, allowing users to pause and resume large batch jobs. All storage uses built-in browser APIs — no dependencies required.
 
 - [ ] **Session Export/Import**: Download a `.json` "Session File" containing all current file names, metadata, crop coordinates, rotations, and export settings.
 - [ ] **Intelligent File Re-linking**: A guided UI to "Reconnect Files" when loading a session, matching local files by name and size to restore the workspace pointers.
-- [ ] **Project Auto-Save**: Periodically backup the active session to `IndexedDB` or `localStorage` to prevent data loss from accidental refreshes or browser crashes.
+- [ ] **Project Auto-Save**: Periodically backup the active session to `IndexedDB` to prevent data loss from accidental refreshes or browser crashes.
 - [ ] **Multi-Selection Sidebar**: Shift-click or Ctrl-click to select multiple files in the sidebar and apply crops or settings to the subset.
 
 ### v2.1 — Scripted Workflow
 
-Shifts the tool from purely visual to hybrid-scripted, enabling deterministic results for power users.
+Shifts the tool from purely visual to hybrid-scripted, enabling deterministic results for power users. Implemented as a pure JS text parser with no new dependencies.
 
 - [ ] **Expression Language**: A text-based "Crop Script" bar (e.g., `center(1:1)`, `top(16:9)`, `pad(10%)`) that can be applied to the whole batch.
 - [ ] **Dynamic Batch Variables**: Support for variables like `w` (width), `h` (height), and `aspect` within scripts to allow responsive crops that adapt to different resolutions.
 - [ ] **Conditional Logic**: Apply different scripts automatically based on image orientation or size (e.g., `if (landscape) rule_a else rule_b`).
-- [ ] **Bulk Metadata Editing**: Ability to rename files based on a scriptable pattern or strip/inject specific EXIF tags during export.
+- [ ] **Bulk Rename**: Rename exported files based on a scriptable pattern (e.g., `{name}_square`, `{index:03d}_{name}`).
 
-### v2.3 — Intelligent Content Processing (Local AI)
+### v2.2 — The "Social Media" Multi-Crop
 
-Using client-side libraries like **Transformers.js** (running via WebAssembly/WebGPU), we could add:
+Specialized workflows for cross-platform content creation. Pure canvas work — no new dependencies.
 
-- [ ] **Background Removal**: One-click background removal for "sticker" creation.
-- [ ] **Client-Side Upscaling**: Simple super-resolution to clean up low-res images before cropping.
-- [ ] **Smart Subject Tracking**: Automatically move the crop box to follow the primary subject across a series of similar photos.
-
-### v2.4 — The "Social Media" Multi-Crop
-
-Specialized workflows for cross-platform content creation.
-
-- [ ] **Multi-Region Export**: Define multiple crop regions on a _single_ image and have them all exported as separate files in the ZIP.
+- [ ] **Multi-Region Export**: Define multiple crop regions on a single image and export them all as separate files in the ZIP.
 - [ ] **Safe Zone Overlays**: Specialized overlays for Instagram/TikTok UI elements to avoid cropping content into interactive zones.
 
-### v2.5 — Advanced Output & Color
+### v2.3 — Advanced Output & Color
 
-- [ ] **Layered PSD/TIFF Export**: Export a ZIP of layered files where the crop, watermark, and original are on separate layers (via `ag-psd`).
-- [ ] **Batch Color Correction**: Simple sliders for Brightness/Contrast/Saturation that apply to the whole batch.
-- [ ] **LUT Support**: Support for uploading and applying `.cube` (3D LUT) files for cinematic color grading.
+- [ ] **Batch Color Correction**: Simple sliders for Brightness/Contrast/Saturation applied to the whole batch via canvas filters — no library needed.
+- [ ] **LUT Support**: Upload and apply `.cube` (3D LUT) files for cinematic color grading, parsed and applied entirely in vanilla JS.
 
-### v2.6 — Automation & Extensibility
+### v2.4 — Automation & Extensibility
 
-- [ ] **Hot-Folder Monitoring**: (Requires v2.2 Desktop Shell) Automatically process and export any images dropped into a specific folder.
-- [ ] **Custom Post-Processing Hooks**: Small JavaScript snippet execution on the `CanvasRenderingContext2D` after crop but before export.
+- [ ] **Custom Post-Processing Hooks**: Small JavaScript snippet execution on the `CanvasRenderingContext2D` after crop but before export — gives power users an escape hatch without adding a dependency.
 
 ---
 
-## Architecture Philosophy
+## 🔭 Beyond the Browser
 
-BatchCropper is intentionally a **single HTML file** with no build toolchain. This keeps it:
+These are compelling ideas that don't fit the single-file, zero-dependency architecture. They would require external libraries, a build step, or OS-level access — making them candidates for a separate companion project rather than additions to this tool.
 
-- **Instantly usable** — open and go, no install
-- **Auditable** — all logic is visible in one file
-- **Portable** — works on any device with a modern browser
-- **Privacy-preserving** — no server, no telemetry, no dependencies to audit
+### Local AI Processing
 
-Any new features should respect these constraints. If a feature requires a build step or server component, it belongs in a separate project.
+Using a library like **Transformers.js** (WebAssembly/WebGPU), these features would require shipping or loading 50–200MB models and a significant runtime dependency — fundamentally at odds with the "auditable, no dependencies" principle.
+
+- **Background Removal**: One-click background removal for "sticker" creation.
+- **Client-Side Upscaling**: Super-resolution to clean up low-res images before cropping.
+- **Smart Subject Tracking**: Automatically move the crop box to follow the primary subject across a series of similar photos.
+
+### Layered File Export
+
+- **PSD/TIFF Export**: Export layered files with crop, watermark, and original on separate layers. Would require `ag-psd` or a similar library.
+
+### Desktop Shell & Automation
+
+These require OS-level file system access that doesn't exist in a browser tab. They belong in an Electron or Tauri wrapper — a separate project entirely.
+
+- **Hot-Folder Monitoring**: Automatically process and export any images dropped into a watched folder.
+- **Drag-to-App Integration**: Accept files dragged directly from Finder/Explorer without a browser dialog.

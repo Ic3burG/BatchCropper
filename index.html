@@ -1733,6 +1733,11 @@
         });
       }
 
+      const rulerTop = document.getElementById('ruler-top');
+      const rulerLeft = document.getElementById('ruler-left');
+      const rulerCorner = document.getElementById('ruler-corner');
+      const canvasWrap = document.getElementById('canvas-wrap');
+
       let isDraggingGuide = false;
       let dragGuideAxis = null;
       let dragGuideIndex = -1;
@@ -1863,9 +1868,6 @@
       }
 
       const rulerBtn = document.getElementById('ruler-btn');
-      const rulerTop = document.getElementById('ruler-top');
-      const rulerLeft = document.getElementById('ruler-left');
-      const rulerCorner = document.getElementById('ruler-corner');
       const cropOverlay = document.getElementById('crop-overlay');
       const coordsDisplay = document.getElementById('coords-display');
       const exportBtn = document.getElementById('export-btn');
@@ -1879,7 +1881,6 @@
       const progressBar = document.getElementById('progress-bar');
       const progressFill = document.getElementById('progress-fill');
       const statusText = document.getElementById('status-text');
-      const canvasWrap = document.getElementById('canvas-wrap');
 
       // Export settings elements
       const qualityContainer = document.getElementById('quality-container');

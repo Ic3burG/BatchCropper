@@ -377,3 +377,39 @@
 - All 5 tasks passed spec compliance review and code quality review via subagent-driven development.
 
 **Status:** ✅ Sidebar cleanup fully implemented and pushed to `main`.
+
+---
+
+## Session: March 19, 2026 (Bug Fix — Drag & Drop)
+
+### 🐛 Fix: Drag-and-Drop Broken by Temporal Dead Zone Errors
+
+**Goal:** Diagnose and fix "cannot drag and drop photos" — drag events were silently unregistered.
+
+**Root cause investigation:**
+
+The v1.9 rulers/guides feature (commit `c22f81a`) introduced a block of guide event-listener code (~lines 1706–1831) that used four DOM-reference `const` variables before they were declared. JavaScript `const` has a **temporal dead zone (TDZ)**: reading a `const` before its declaration in the same scope throws a `ReferenceError` at runtime (unlike `var` which hoists). The affected variables and their use/declaration positions were:
+
+| Variable      | First used (line)       | Declared (line) |
+| ------------- | ----------------------- | --------------- |
+| `rulerTop`    | 1744                    | 1869            |
+| `rulerLeft`   | 1751                    | 1870            |
+| `rulerCorner` | _(only at declaration)_ | 1871            |
+| `canvasWrap`  | 1758                    | 1884            |
+
+The `ReferenceError` on `rulerTop` aborted script execution mid-initialization, leaving every event listener below that point — including all drag-drop handlers — never registered. Because the error was a runtime exception (not a parse error), the previous commit's fix (`1b40798`, which removed a duplicate `const cropBox` SyntaxError) restored script parsing but did not fix this second crash.
+
+**Diagnosis method:**
+
+1. Confirmed script had no SyntaxError via Node.js parse check.
+2. Served app via `python3 -m http.server` (Chrome blocks `file://` URLs in extensions).
+3. Loaded app in Chrome via the Claude-in-Chrome extension and read console errors → found `ReferenceError: Cannot access 'rulerTop' before initialization` at line 1740.
+4. After fixing `rulerTop`/`rulerLeft`/`rulerCorner`, reloaded → new error: `ReferenceError: Cannot access 'canvasWrap' before initialization` at line 1758.
+5. After fixing `canvasWrap`, reloaded → zero console errors.
+6. Verified via JS: `typeof loadFiles !== 'undefined'` (script ran) and `dragover` on the drop zone returns `defaultPrevented: true`.
+
+**Fix:**
+
+- `a272e0d` — hoisted `rulerTop`, `rulerLeft`, `rulerCorner`, and `canvasWrap` declarations to immediately before the guide code block; removed the now-duplicate declarations from the later initialization section (~line 1870)
+
+**Status:** ✅ Drag-and-drop restored. No console errors on load. All event listeners register correctly.
